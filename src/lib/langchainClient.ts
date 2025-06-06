@@ -1,8 +1,10 @@
 // src/lib/langchainClient.ts
 import { Ollama } from "@langchain/community/llms/ollama";
+import { ChatOpenAI } from "@langchain/openai";
 import { PromptTemplate } from "@langchain/core/prompts";
 import { LLMChain } from "langchain/chains";
 import { BaseOutputParser } from "@langchain/core/output_parsers";
+import { BaseLLM } from "@langchain/core/language_models/llms";
 
 // Custom output parser for KPI explanations
 class KPIExplanationParser extends BaseOutputParser<{
@@ -47,8 +49,18 @@ class KPIExplanationParser extends BaseOutputParser<{
   }
 }
 
-// Initialize Ollama client
-const initializeOllamaClient = () => {
+// Initialize LLM client (OpenAI or Ollama)
+const initializeLLMClient = (): BaseLLM => {
+  // Prefer OpenAI for production, fallback to Ollama for local development
+  if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here') {
+    return new ChatOpenAI({
+      openAIApiKey: process.env.OPENAI_API_KEY,
+      modelName: process.env.OPENAI_MODEL || "gpt-4o-mini",
+      temperature: parseFloat(process.env.OPENAI_TEMPERATURE || "0.1"),
+    }) as any; // Type assertion for compatibility
+  }
+
+  // Fallback to Ollama
   return new Ollama({
     baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
     model: process.env.LLAMA_MODEL || "llama3.2:latest",
@@ -130,13 +142,13 @@ Remember to:
 
 // LangChain orchestrator class
 export class KPIExplanationChain {
-  private llm: Ollama;
+  private llm: BaseLLM;
   private promptTemplate: PromptTemplate;
   private outputParser: KPIExplanationParser;
   private chain: LLMChain;
 
   constructor() {
-    this.llm = initializeOllamaClient();
+    this.llm = initializeLLMClient();
     this.promptTemplate = createKPIPromptTemplate();
     this.outputParser = new KPIExplanationParser();
 

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { checkDatabaseConnection } from '@/lib/prisma'
 import { llamaHealthCheck } from '@/lib/ai/llama'
+import { openaiHealthCheck } from '@/lib/ai/openai'
 
 export async function GET() {
   try {
@@ -17,20 +18,8 @@ export async function GET() {
       nodeVersion: process.version
     }
 
-    // Check OpenAI (basic check)
-    let openaiHealth
-    try {
-      // Simple check - we'll just verify the API key is present
-      openaiHealth = {
-        status: process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here' ? 'healthy' : 'not_configured',
-        configured: !!(process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here'),
-      }
-    } catch (error) {
-      openaiHealth = {
-        status: 'unhealthy',
-        error: error instanceof Error ? error.message : String(error),
-      }
-    }
+    // Check OpenAI
+    const openaiHealth = await openaiHealthCheck()
 
     // Check Llama AI
     const llamaHealth = await llamaHealthCheck()
