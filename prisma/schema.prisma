@@ -1,0 +1,257 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User Management & Authentication
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?   // For email/password authentication
+  role          String    @default("ANALYST")
+  department    String?
+  title         String?
+  isActive      Boolean   @default(true)
+  lastLoginAt   DateTime? // Track last login for security
+  loginAttempts Int       @default(0) // Track failed login attempts
+  lockedUntil   DateTime? // Account lockout for security
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  organizationUser OrganizationUser[]
+  queries          Query[]
+  documents        Document[]
+  alerts           Alert[]
+  auditLogs        AuditLog[]
+
+  @@map("users")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Organization & Access Control
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  description String?
+  settings    String?  // JSON as string for SQLite
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users     OrganizationUser[]
+  funds     Fund[]
+  documents Document[]
+  kpis      KPI[]
+
+  @@map("organizations")
+}
+
+model OrganizationUser {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  role           String   @default("VIEWER")
+  permissions    String?  // JSON as string for SQLite
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@map("organization_users")
+}
+
+// Portfolio Structure
+model Fund {
+  id             String   @id @default(cuid())
+  name           String
+  fundNumber     String?
+  vintage        Int?
+  strategy       String?
+  status         String   @default("ACTIVE")
+  totalSize      Float?
+  currency       String   @default("USD")
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  portfolios   Portfolio[]
+  kpis         KPI[]
+
+  @@map("funds")
+}
+
+model Portfolio {
+  id          String   @id @default(cuid())
+  name        String
+  sector      String?
+  geography   String?
+  status      String   @default("ACTIVE")
+  investment  Float?
+  ownership   Float?
+  fundId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  fund Fund  @relation(fields: [fundId], references: [id], onDelete: Cascade)
+  kpis KPI[]
+
+  @@map("portfolios")
+}
+
+// KPI & Data Management
+model KPI {
+  id           String    @id @default(cuid())
+  name         String
+  category     String
+  subcategory  String?
+  value        Float
+  unit         String?
+  period       DateTime
+  periodType   String    @default("quarterly") // quarterly, monthly, annual
+  currency     String?
+  source       String?
+  confidence   Float? // 0.00 to 1.00
+  notes        String?
+  metadata     String?  // JSON as string for SQLite
+  fundId       String?
+  portfolioId  String?
+  organizationId String
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fund         Fund?        @relation(fields: [fundId], references: [id], onDelete: SetNull)
+  portfolio    Portfolio?   @relation(fields: [portfolioId], references: [id], onDelete: SetNull)
+
+  @@map("kpis")
+}
+
+// Document Management
+model Document {
+  id             String   @id @default(cuid())
+  title          String
+  filename       String
+  fileType       String
+  fileSize       Int
+  filePath       String
+  uploadedBy     String
+  organizationId String
+  status         String   @default("PROCESSING")
+  extractedText  String?
+  metadata       String?  // JSON as string for SQLite
+  tags           String?  // Comma-separated tags for SQLite
+  isEmbedded     Boolean  @default(false)
+  embeddingId    String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  uploader     User         @relation(fields: [uploadedBy], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+// AI Query & Chat
+model Query {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String?
+  question       String
+  response       String?
+  context        String?  // JSON as string for SQLite
+  sources        String?  // Comma-separated sources for SQLite
+  status         String   @default("PROCESSING")
+  processingTime Int?     // milliseconds
+  tokens         Int?
+  createdAt      DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("queries")
+}
+
+// Alerts & Monitoring
+model Alert {
+  id          String    @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  type        String
+  severity    String    @default("INFO")
+  condition   String    // Alert conditions and thresholds as JSON string
+  isActive    Boolean   @default(true)
+  lastTriggered DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alerts")
+}
+
+// Audit & Compliance
+model AuditLog {
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  resource   String
+  resourceId String?
+  details    String?  // JSON as string for SQLite
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
+}
