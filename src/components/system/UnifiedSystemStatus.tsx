@@ -31,8 +31,12 @@ export function UnifiedSystemStatus({
   const checkSystemHealth = async () => {
     setLoading(true)
     try {
-      const newStatus = await systemCoordinator.checkSystemHealth()
-      setStatus(newStatus)
+      // Call the health API
+      const response = await fetch('/api/health')
+      if (response.ok) {
+        const data = await response.json()
+        setStatus(data.services || {})
+      }
     } catch (error) {
       console.error('Failed to check system health:', error)
     } finally {
@@ -51,45 +55,59 @@ export function UnifiedSystemStatus({
 
   const getStatusIcon = () => {
     if (!status) return <RefreshCw className="w-5 h-5 animate-spin text-gray-400" />
-    
-    switch (status.overall) {
-      case 'healthy':
-        return <CheckCircle className="w-5 h-5 text-green-600" />
-      case 'partial':
-        return <AlertTriangle className="w-5 h-5 text-orange-600" />
-      default:
-        return <XCircle className="w-5 h-5 text-red-600" />
+
+    // Check if all services are healthy
+    const services = Object.values(status)
+    const allHealthy = services.every((service: any) => service.status === 'healthy')
+    const anyUnhealthy = services.some((service: any) => service.status === 'unhealthy')
+
+    if (allHealthy) {
+      return <CheckCircle className="w-5 h-5 text-green-600" />
+    } else if (anyUnhealthy) {
+      return <XCircle className="w-5 h-5 text-red-600" />
+    } else {
+      return <AlertTriangle className="w-5 h-5 text-orange-600" />
     }
   }
 
   const getStatusText = () => {
     if (!status) return 'Checking system status...'
-    
-    switch (status.overall) {
-      case 'healthy':
-        return 'All Systems Operational'
-      case 'partial':
-        return 'Partial Functionality'
-      default:
-        return 'System Issues Detected'
+
+    // Check if all services are healthy
+    const services = Object.values(status)
+    const allHealthy = services.every((service: any) => service.status === 'healthy')
+    const anyUnhealthy = services.some((service: any) => service.status === 'unhealthy')
+
+    if (allHealthy) {
+      return 'All Systems Operational'
+    } else if (anyUnhealthy) {
+      return 'System Issues Detected'
+    } else {
+      return 'Partial Functionality'
     }
   }
 
   const getStatusColor = () => {
     if (!status) return 'border-l-gray-400'
-    
-    switch (status.overall) {
-      case 'healthy':
-        return 'border-l-green-500'
-      case 'partial':
-        return 'border-l-orange-500'
-      default:
-        return 'border-l-red-500'
+
+    // Check if all services are healthy
+    const services = Object.values(status)
+    const allHealthy = services.every((service: any) => service.status === 'healthy')
+    const anyUnhealthy = services.some((service: any) => service.status === 'unhealthy')
+
+    if (allHealthy) {
+      return 'border-l-green-500'
+    } else if (anyUnhealthy) {
+      return 'border-l-red-500'
+    } else {
+      return 'border-l-orange-500'
     }
   }
 
-  const getCapabilityStatus = (capability: keyof SystemStatus['capabilities']) => {
-    return status?.capabilities[capability] ? '✓' : '✗'
+  const getCapabilityStatus = (serviceName: string) => {
+    if (!status || !status[serviceName as keyof typeof status]) return '✗'
+    const service = status[serviceName as keyof typeof status] as any
+    return service.status === 'healthy' ? '✓' : '✗'
   }
 
   if (variant === 'compact') {
@@ -103,15 +121,15 @@ export function UnifiedSystemStatus({
               <div className="text-sm text-muted-foreground flex items-center space-x-4">
                 <span className="flex items-center space-x-1">
                   <Database className="w-3 h-3" />
-                  <span>Data {status?.services.database ? '✓' : '✗'}</span>
+                  <span>Data {getCapabilityStatus('database')}</span>
                 </span>
                 <span className="flex items-center space-x-1">
                   <Brain className="w-3 h-3" />
-                  <span>AI {status?.services.ai ? '✓' : '✗'}</span>
+                  <span>AI {getCapabilityStatus('ai')}</span>
                 </span>
                 <span className="flex items-center space-x-1">
                   <Zap className="w-3 h-3" />
-                  <span>API {status?.services.api ? '✓' : '✗'}</span>
+                  <span>Auth {getCapabilityStatus('auth')}</span>
                 </span>
               </div>
             </div>
@@ -140,7 +158,7 @@ export function UnifiedSystemStatus({
             <div>
               <h3 className="font-semibold">{getStatusText()}</h3>
               <p className="text-sm text-muted-foreground">
-                Last checked: {status ? new Date(status.lastCheck).toLocaleTimeString() : 'Never'}
+                Last checked: {status ? new Date().toLocaleTimeString() : 'Never'}
               </p>
             </div>
           </div>
@@ -162,24 +180,24 @@ export function UnifiedSystemStatus({
           <div className="text-center p-3 border rounded-lg">
             <Database className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
             <div className="font-medium">Database</div>
-            <Badge variant={status?.services.database ? 'default' : 'destructive'}>
-              {status?.services.database ? 'Connected' : 'Offline'}
+            <Badge variant={getCapabilityStatus('database') === '✓' ? 'default' : 'destructive'}>
+              {getCapabilityStatus('database') === '✓' ? 'Connected' : 'Offline'}
             </Badge>
           </div>
           
           <div className="text-center p-3 border rounded-lg">
             <Brain className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
             <div className="font-medium">AI Engine</div>
-            <Badge variant={status?.services.ai ? 'default' : 'secondary'}>
-              {status?.services.ai ? 'Active' : 'Unavailable'}
+            <Badge variant={getCapabilityStatus('ai') === '✓' ? 'default' : 'secondary'}>
+              {getCapabilityStatus('ai') === '✓' ? 'Active' : 'Unavailable'}
             </Badge>
           </div>
           
           <div className="text-center p-3 border rounded-lg">
             <Zap className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
             <div className="font-medium">API</div>
-            <Badge variant={status?.services.api ? 'default' : 'destructive'}>
-              {status?.services.api ? 'Healthy' : 'Error'}
+            <Badge variant={getCapabilityStatus('auth') === '✓' ? 'default' : 'destructive'}>
+              {getCapabilityStatus('auth') === '✓' ? 'Healthy' : 'Error'}
             </Badge>
           </div>
         </div>

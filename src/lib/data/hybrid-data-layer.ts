@@ -6,7 +6,7 @@
 
 import { PrismaClient } from '@prisma/client'
 import { createClient } from '@supabase/supabase-js'
-import { Database } from '../supabase/types'
+// import { Database } from '../supabase/types' // Commented out for now
 
 // Initialize clients
 const prisma = new PrismaClient()
@@ -17,7 +17,7 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 const supabase = (supabaseUrl && supabaseAnonKey && 
   supabaseUrl !== 'https://your-project.supabase.co' &&
   supabaseAnonKey !== 'your-supabase-anon-key') 
-  ? createClient<Database>(supabaseUrl, supabaseAnonKey)
+  ? createClient(supabaseUrl, supabaseAnonKey)
   : null
 
 // Configuration flags

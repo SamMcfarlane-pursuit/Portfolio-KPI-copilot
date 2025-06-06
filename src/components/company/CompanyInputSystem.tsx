@@ -111,15 +111,14 @@ export function CompanyInputSystem({ onCompanyAdded, className }: CompanyInputSy
 
   const fetchOrganizations = async () => {
     try {
-      const result = await systemCoordinator.performDataOperation({
-        type: 'read',
-        entity: 'organization'
-      })
-      
-      if (result.success && result.data?.data) {
-        setOrganizations(result.data.data)
-        if (result.data.data.length > 0) {
-          setSelectedOrg(result.data.data[0].id)
+      // Simple fetch from API
+      const response = await fetch('/api/organizations')
+      if (response.ok) {
+        const data = await response.json()
+        const orgs = data.organizations || []
+        setOrganizations(orgs)
+        if (orgs.length > 0) {
+          setSelectedOrg(orgs[0].id)
         }
       }
     } catch (error) {
@@ -138,10 +137,13 @@ export function CompanyInputSystem({ onCompanyAdded, className }: CompanyInputSy
     setMessage(null)
 
     try {
-      const result = await systemCoordinator.performDataOperation({
-        type: 'create',
-        entity: 'portfolio',
-        data: {
+      // Call the companies API
+      const response = await fetch('/api/companies', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           ...companyData,
           investment: parseFloat(companyData.investment) * 1000000, // Convert to actual value
           ownership: parseFloat(companyData.ownership) / 100, // Convert to decimal
@@ -150,8 +152,10 @@ export function CompanyInputSystem({ onCompanyAdded, className }: CompanyInputSy
           founded: companyData.founded ? parseInt(companyData.founded) : null,
           organizationId: selectedOrg,
           status: 'ACTIVE'
-        }
+        }),
       })
+
+      const result = await response.json()
 
       if (result.success) {
         setMessage({ type: 'success', text: `Company "${companyData.name}" added successfully!` })
@@ -188,10 +192,13 @@ export function CompanyInputSystem({ onCompanyAdded, className }: CompanyInputSy
     setMessage(null)
 
     try {
-      const result = await systemCoordinator.performDataOperation({
-        type: 'create',
-        entity: 'kpi',
-        data: {
+      // Call the KPIs API
+      const response = await fetch('/api/kpis', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           ...kpiData,
           value: parseFloat(kpiData.value),
           period: new Date(kpiData.period),
@@ -199,8 +206,10 @@ export function CompanyInputSystem({ onCompanyAdded, className }: CompanyInputSy
           source: 'Manual Entry',
           confidence: 1.0,
           organizationId: selectedOrg
-        }
+        }),
       })
+
+      const result = await response.json()
 
       if (result.success) {
         setMessage({ type: 'success', text: `KPI "${kpiData.name}" added successfully!` })

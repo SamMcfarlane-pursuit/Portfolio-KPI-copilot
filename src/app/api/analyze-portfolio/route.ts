@@ -75,7 +75,6 @@ async function fetchPortfolioData(params: any) {
     where: whereClause,
     include: {
       fund: true,
-      organization: true,
       kpis: {
         orderBy: { period: 'desc' },
         take: 20 // Recent KPIs
@@ -149,10 +148,10 @@ function buildAnalysisPrompt(params: any, portfolioData: any) {
   return prompt;
 }
 
-function extractKeyInsights(analysis: any) {
+function extractKeyInsights(analysis: any): string[] {
   // Extract key insights from the AI response
   // This is a simplified version - you could make this more sophisticated
-  const insights = [];
+  const insights: string[] = [];
   
   if (analysis.explanation) {
     const text = analysis.explanation;
@@ -168,7 +167,7 @@ function extractKeyInsights(analysis: any) {
     insightPatterns.forEach(pattern => {
       const matches = text.match(pattern);
       if (matches) {
-        insights.push(...matches.slice(0, 3)); // Limit to 3 per pattern
+        insights.push(...matches.slice(0, 3).map((m: string) => m.trim())); // Limit to 3 per pattern
       }
     });
   }
@@ -224,7 +223,7 @@ export async function GET(request: NextRequest) {
         id: true
       },
       _avg: {
-        currentValuation: true
+        investment: true
       }
     });
 

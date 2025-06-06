@@ -95,6 +95,12 @@ export async function isLlamaAvailable(): Promise<boolean> {
   }
 }
 
+// Generate with Llama (alias for compatibility)
+export async function generateWithLlama(query: string, context?: any): Promise<string> {
+  const response = await generatePortfolioResponse({ query, context })
+  return response.response
+}
+
 // Generate portfolio analysis response
 export async function generatePortfolioResponse({
   query,

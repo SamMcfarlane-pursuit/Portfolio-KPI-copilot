@@ -16,7 +16,13 @@ import {
   Building2,
   DollarSign
 } from 'lucide-react'
-import { systemCoordinator, AIResponse } from '@/lib/system/SystemCoordinator'
+import { systemCoordinator } from '@/lib/system/SystemCoordinator'
+
+interface AIResponse {
+  response: string
+  sources?: any[]
+  processingTime?: number
+}
 
 interface Message {
   id: string
@@ -49,8 +55,8 @@ export function UnifiedAIInterface({ portfolioContext, className }: UnifiedAIInt
   useEffect(() => {
     // Check AI capabilities
     const checkCapabilities = () => {
-      const capabilities = systemCoordinator.getCapabilities()
-      setAiCapable(capabilities.aiChat)
+      // Simple check for AI capability
+      setAiCapable(!!(process.env.OPENAI_API_KEY || process.env.OLLAMA_BASE_URL))
     }
     
     checkCapabilities()
@@ -81,17 +87,34 @@ export function UnifiedAIInterface({ portfolioContext, className }: UnifiedAIInt
     setIsLoading(true)
 
     try {
-      const response: AIResponse = await systemCoordinator.sendAIQuery(
-        userMessage.content,
-        portfolioContext
-      )
+      // Call the explain-kpi API
+      const apiResponse = await fetch('/api/explain-kpi', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: userMessage.content,
+          userRole: 'portfolio_manager',
+          portfolioContext: JSON.stringify(portfolioContext)
+        }),
+      })
+
+      if (!apiResponse.ok) {
+        throw new Error('Failed to get AI response')
+      }
+
+      const data = await apiResponse.json()
+      const response: AIResponse = {
+        response: data.success ? data.data.explanation : 'Sorry, I could not process your request.',
+        processingTime: data.metadata?.responseTime
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: response.content,
+        content: response.response,
         timestamp: new Date(),
-        provider: response.provider,
         processingTime: response.processingTime
       }
 

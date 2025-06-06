@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { QuickDataEntry } from '@/components/data-entry/QuickDataEntry'
+import { CompanyInputSystem } from '@/components/company/CompanyInputSystem'
 import { OriginalDataView } from '@/components/data/OriginalDataView'
 import {
   Plus,
@@ -50,7 +50,13 @@ export function DataTabs({
       </TabsContent>
 
       <TabsContent value="entry" className="space-y-6">
-        <QuickDataEntry />
+        <CompanyInputSystem
+          onCompanyAdded={(company) => {
+            console.log('Company added:', company)
+            // Optionally refresh the page or update state
+            window.location.reload()
+          }}
+        />
       </TabsContent>
     </Tabs>
   )
