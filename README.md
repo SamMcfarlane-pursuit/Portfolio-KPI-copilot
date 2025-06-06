@@ -243,3 +243,4 @@ Stay updated with the latest features:
 - Follow the repository for updates
 - Check release notes for new features
 - Update Ollama models regularly for improved AI performance
+# Portfolio-KPI-copilot
