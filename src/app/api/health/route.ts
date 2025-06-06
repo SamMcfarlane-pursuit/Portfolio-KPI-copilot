@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 import { checkDatabaseConnection } from '@/lib/prisma'
 import { llamaHealthCheck } from '@/lib/ai/llama'
-import { supabaseHealthCheck } from '@/lib/supabase/server'
 
 export async function GET() {
   try {
@@ -36,8 +35,8 @@ export async function GET() {
     // Check Llama AI
     const llamaHealth = await llamaHealthCheck()
 
-    // Check Supabase
-    const supabaseHealth = await supabaseHealthCheck()
+    // Supabase check (not configured yet)
+    const supabaseHealth = { status: 'not_configured', message: 'Using Prisma/SQLite' }
 
     const responseTime = Date.now() - startTime
 
