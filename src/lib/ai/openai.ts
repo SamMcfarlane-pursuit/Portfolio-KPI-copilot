@@ -46,6 +46,15 @@ export async function generateWithOpenAI(question: string): Promise<string> {
 
 export async function openaiHealthCheck() {
   try {
+    // Skip health check during build time
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL) {
+      return {
+        status: 'not_configured',
+        configured: false,
+        message: 'Build environment - skipping health check'
+      }
+    }
+
     if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
       return {
         status: 'not_configured',

@@ -72,21 +72,25 @@ export class SupabaseServerClient {
 
 export const supabaseServer = new SupabaseServerClient()
 
-// Export commonly used functions
-export async function getPortfolios() {
-  return supabaseServer.getPortfolios()
+// Export commonly used functions with proper return types
+export async function getPortfolios(userId?: string) {
+  const portfolios = await supabaseServer.getPortfolios()
+  return { data: portfolios, error: null }
 }
 
 export async function createPortfolio(data: any) {
-  return supabaseServer.createPortfolio(data)
+  const portfolio = await supabaseServer.createPortfolio(data)
+  return { data: portfolio, error: null }
 }
 
 export async function updatePortfolio(id: string, data: any) {
-  return supabaseServer.updatePortfolio(id, data)
+  const portfolio = await supabaseServer.updatePortfolio(id, data)
+  return { data: portfolio, error: null }
 }
 
 export async function deletePortfolio(id: string) {
-  return supabaseServer.deletePortfolio(id)
+  await supabaseServer.deletePortfolio(id)
+  return { error: null }
 }
 
 // Additional exports for compatibility
@@ -100,4 +104,36 @@ export async function getUser() {
 
 export async function checkOrganizationAccess(userId: string, orgId: string) {
   return true // Placeholder implementation
+}
+
+// KPI functions
+export async function getKPIs(portfolioId?: string) {
+  // Mock KPI data for now
+  const mockKPIs = [
+    {
+      id: '1',
+      name: 'Revenue Growth',
+      value: '15%',
+      portfolio_id: portfolioId || '1',
+      created_at: new Date().toISOString()
+    },
+    {
+      id: '2',
+      name: 'Customer Acquisition Cost',
+      value: '$120',
+      portfolio_id: portfolioId || '1',
+      created_at: new Date().toISOString()
+    }
+  ]
+
+  return { data: mockKPIs, error: null }
+}
+
+export async function createKPI(data: any) {
+  const kpi = {
+    id: Math.random().toString(36).substr(2, 9),
+    ...data,
+    created_at: new Date().toISOString()
+  }
+  return { data: kpi, error: null }
 }

@@ -34,6 +34,15 @@ export function handlePrismaError(error: any) {
 // Connection health check
 export async function checkDatabaseConnection() {
   try {
+    // Skip database check during build time if no DATABASE_URL
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL && !process.env.DATABASE_URL) {
+      return {
+        status: 'not_configured',
+        message: 'Build environment - skipping database check',
+        timestamp: new Date().toISOString()
+      }
+    }
+
     await prisma.$queryRaw`SELECT 1`
     return { status: 'healthy', timestamp: new Date().toISOString() }
   } catch (error) {

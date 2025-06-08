@@ -319,6 +319,14 @@ export async function llamaHealthCheck(): Promise<{
   error?: string
 }> {
   try {
+    // Skip health check during build time
+    if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL) {
+      return {
+        status: 'not_configured',
+        error: 'Build environment - skipping health check'
+      }
+    }
+
     const startTime = Date.now()
     const available = await isLlamaAvailable()
     const responseTime = Date.now() - startTime
