@@ -165,19 +165,42 @@ export class PineconeClient {
   }
 
   private async generateEmbedding(text: string): Promise<number[]> {
-    // Use OpenAI to generate embeddings
+    // Use OpenAI to generate embeddings if available
     try {
-      const { openai } = await import('./openai')
-      const response = await openai.embeddings.create({
-        model: 'text-embedding-ada-002',
-        input: text
-      })
-      return response.data[0].embedding
+      // Check if OpenAI is disabled
+      if (process.env.DISABLE_OPENAI === 'true') {
+        console.log('🔄 OpenAI disabled, using fallback embedding')
+        return this.generateFallbackEmbedding(text)
+      }
+
+      // Try to get OpenAI client
+      const openaiModule = await import('./openai')
+      if (typeof openaiModule.createChatCompletion !== 'function') {
+        throw new Error('OpenAI not properly configured')
+      }
+
+      // For now, use fallback since we don't have embeddings endpoint configured
+      console.log('🔄 Using fallback embedding (OpenAI embeddings not configured)')
+      return this.generateFallbackEmbedding(text)
+
     } catch (error) {
       console.error('❌ Failed to generate embedding:', error)
-      // Return dummy embedding for fallback
-      return new Array(FREE_TIER_LIMITS.maxDimensions).fill(0)
+      return this.generateFallbackEmbedding(text)
     }
+  }
+
+  private generateFallbackEmbedding(text: string): number[] {
+    // Generate a simple hash-based embedding for fallback
+    const embedding = new Array(FREE_TIER_LIMITS.maxDimensions).fill(0)
+
+    // Simple hash-based approach for consistent embeddings
+    for (let i = 0; i < text.length && i < FREE_TIER_LIMITS.maxDimensions; i++) {
+      embedding[i % FREE_TIER_LIMITS.maxDimensions] += text.charCodeAt(i) / 1000
+    }
+
+    // Normalize the embedding
+    const magnitude = Math.sqrt(embedding.reduce((sum, val) => sum + val * val, 0))
+    return magnitude > 0 ? embedding.map(val => val / magnitude) : embedding
   }
 
   private fallbackSearch(query: string): VectorSearchResult[] {

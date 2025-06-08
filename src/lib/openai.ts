@@ -5,18 +5,32 @@
 
 import OpenAI from 'openai'
 
-// Initialize OpenAI client
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy initialization of OpenAI client to handle missing API keys
+let openai: OpenAI | null = null
+
+function getOpenAIClient(): OpenAI | null {
+  if (process.env.DISABLE_OPENAI === 'true' || !process.env.OPENAI_API_KEY) {
+    return null
+  }
+
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+
+  return openai
+}
 
 export async function createChatCompletion(messages: any[], options: any = {}) {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OpenAI API key not configured')
+  const client = getOpenAIClient()
+
+  if (!client) {
+    throw new Error('OpenAI API key not configured or disabled')
   }
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: options.model || process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages,
       max_tokens: options.maxTokens || parseInt(process.env.OPENAI_MAX_TOKENS || '1000'),
@@ -42,12 +56,17 @@ export const SYSTEM_PROMPTS = {
 
 export async function checkOpenAIHealth() {
   try {
-    if (!process.env.OPENAI_API_KEY) {
+    if (process.env.DISABLE_OPENAI === 'true') {
+      return { status: 'disabled', message: 'OpenAI intentionally disabled' }
+    }
+
+    const client = getOpenAIClient()
+    if (!client) {
       return { status: 'not_configured', message: 'API key not set' }
     }
 
     // Simple test request
-    await openai.chat.completions.create({
+    await client.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [{ role: 'user', content: 'Hello' }],
       max_tokens: 5,

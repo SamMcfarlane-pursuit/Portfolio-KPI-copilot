@@ -1,0 +1,55 @@
+# VERCEL ENVIRONMENT VARIABLES
+# Copy these to your Vercel dashboard under Settings > Environment Variables
+
+# =============================================================================
+# REQUIRED FOR DEPLOYMENT
+# =============================================================================
+
+# Database (SQLite for now)
+DATABASE_URL=file:./dev.db
+
+# Next.js Authentication
+NEXTAUTH_SECRET=knMDkhzRoqpySGulJY4qhE7sA1EuOqvZGCorD+605VQ=
+NEXTAUTH_URL=https://portfolio-kpi-dashboard-v3.vercel.app
+
+# =============================================================================
+# AI CONFIGURATION (DISABLED FOR INITIAL DEPLOYMENT)
+# =============================================================================
+
+# Disable OpenAI for now
+DISABLE_OPENAI=true
+FALLBACK_TO_OPENAI=false
+
+# Ollama (not available in Vercel)
+USE_OLLAMA_PRIMARY=false
+FALLBACK_TO_SQLITE=true
+
+# =============================================================================
+# FEATURE FLAGS
+# =============================================================================
+
+# Use local SQLite instead of Supabase
+USE_SUPABASE_PRIMARY=false
+
+# =============================================================================
+# OPTIONAL - ADD LATER IF NEEDED
+# =============================================================================
+
+# Google OAuth (add your real credentials)
+# GOOGLE_CLIENT_ID=your-google-client-id
+# GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# GitHub OAuth (add your real credentials)  
+# GITHUB_ID=your-github-id
+# GITHUB_SECRET=your-github-secret
+
+# OpenAI (add when you have a valid API key)
+# OPENAI_API_KEY=your-openai-api-key
+# OPENAI_MODEL=gpt-4o-mini
+
+# =============================================================================
+# PRODUCTION SETTINGS
+# =============================================================================
+
+NODE_ENV=production
+LOG_LEVEL=info
