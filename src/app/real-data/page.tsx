@@ -51,14 +51,15 @@ export default async function RealDataPage() {
   const totalInvestment = portfolios.reduce((sum, p) => sum + (p.investment || 0), 0)
 
   // Calculate portfolio performance
-  const portfolioPerformance = portfolios.map(portfolio => {
-    const revenueKPIs = portfolio.kpis
-      .filter(kpi => kpi.category === 'revenue')
-      .sort((a, b) => new Date(b.period).getTime() - new Date(a.period).getTime())
-    
-    const operationalKPIs = portfolio.kpis.filter(kpi => kpi.category === 'operational')
-    const customerKPIs = portfolio.kpis.filter(kpi => kpi.category === 'customers')
-    const profitabilityKPIs = portfolio.kpis.filter(kpi => kpi.category === 'profitability')
+  const portfolioPerformance = portfolios.map((portfolio: any) => {
+    const kpis = portfolio.kpis || []
+    const revenueKPIs = kpis
+      .filter((kpi: any) => kpi.category === 'revenue')
+      .sort((a: any, b: any) => new Date(b.period).getTime() - new Date(a.period).getTime())
+
+    const operationalKPIs = kpis.filter((kpi: any) => kpi.category === 'operational')
+    const customerKPIs = kpis.filter((kpi: any) => kpi.category === 'customers')
+    const profitabilityKPIs = kpis.filter((kpi: any) => kpi.category === 'profitability')
 
     // Calculate growth rate
     let growthRate = 0
@@ -76,7 +77,7 @@ export default async function RealDataPage() {
     else if (growthRate < -10) healthScore -= 20
 
     if (profitabilityKPIs.length > 0) {
-      const avgMargin = profitabilityKPIs.reduce((sum, kpi) => sum + kpi.value, 0) / profitabilityKPIs.length
+      const avgMargin = profitabilityKPIs.reduce((sum: number, kpi: any) => sum + kpi.value, 0) / profitabilityKPIs.length
       if (avgMargin > 20) healthScore += 20
       else if (avgMargin > 10) healthScore += 10
       else if (avgMargin < 0) healthScore -= 15
@@ -89,13 +90,13 @@ export default async function RealDataPage() {
       latestRevenue: revenueKPIs[0]?.value || 0,
       growthRate,
       healthScore,
-      customerCount: customerKPIs.reduce((sum, kpi) => sum + kpi.value, 0),
+      customerCount: customerKPIs.reduce((sum: number, kpi: any) => sum + kpi.value, 0),
       operationalMetrics: operationalKPIs.length
     }
   })
 
   // Get metadata from latest KPI for market context
-  const marketContext = portfolios[0]?.kpis[0]?.metadata ? 
+  const marketContext = portfolios[0]?.kpis?.[0]?.metadata ?
     JSON.parse(portfolios[0].kpis[0].metadata) : {}
 
   return (
