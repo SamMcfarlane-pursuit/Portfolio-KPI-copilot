@@ -5,16 +5,17 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { 
-  BarChart3, 
-  Brain, 
-  MessageSquare, 
-  Database, 
-  Activity, 
+import {
+  BarChart3,
+  Brain,
+  MessageSquare,
+  Database,
+  Activity,
   Home,
   Menu,
   X,
-  ChevronDown
+  ChevronDown,
+  Shield
 } from 'lucide-react'
 import {
   DropdownMenu,
@@ -50,6 +51,12 @@ const navigationItems = [
     href: '/real-data',
     icon: Database,
     description: 'Portfolio data & entry'
+  },
+  {
+    name: 'Auth Test',
+    href: '/auth/test',
+    icon: Shield,
+    description: 'Authentication testing & verification'
   }
 ]
 
