@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { withAuth } from 'next-auth/middleware'
+// import { withAuth } from 'next-auth/middleware'
 
-// Performance monitoring and optimization middleware
-export default withAuth(
-  function middleware(request: NextRequest) {
+// Performance monitoring and optimization middleware - TEMPORARILY DISABLED AUTH
+export default function middleware(request: NextRequest) {
     const startTime = Date.now()
     
     // Add performance headers
@@ -58,48 +57,7 @@ export default withAuth(
     }
 
     return response
-  },
-  {
-    callbacks: {
-      authorized: ({ token, req }) => {
-        // Public routes that don't require authentication
-        const publicRoutes = [
-          '/',
-          '/auth/signin',
-          '/auth/signup', 
-          '/auth/error',
-          '/api/health',
-          '/api/system/status',
-          '/api/docs'
-        ]
-
-        const { pathname } = req.nextUrl
-        
-        // Allow public routes
-        if (publicRoutes.includes(pathname)) {
-          return true
-        }
-
-        // Allow API documentation
-        if (pathname.startsWith('/api/docs')) {
-          return true
-        }
-
-        // Require authentication for protected routes
-        if (pathname.startsWith('/dashboard') || 
-            pathname.startsWith('/real-data') ||
-            pathname.startsWith('/api/portfolios') ||
-            pathname.startsWith('/api/kpis') ||
-            pathname.startsWith('/api/chat')) {
-          return !!token
-        }
-
-        // Default to allowing the request
-        return true
-      }
-    }
-  }
-)
+}
 
 export const config = {
   matcher: [

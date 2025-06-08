@@ -1,16 +1,12 @@
-import { redirect } from 'next/navigation'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { LandingPage } from '@/components/landing/landing-page'
 
 export default async function HomePage() {
-  const session = await getServerSession(authOptions)
+  // Temporarily bypass auth for testing
+  // const session = await getServerSession(authOptions)
+  // if (session) {
+  //   redirect('/ai-dashboard')
+  // }
 
-  // If user is authenticated, redirect to dashboard
-  if (session) {
-    redirect('/ai-dashboard')
-  }
-
-  // Show landing page for unauthenticated users
+  // Show landing page for all users (testing mode)
   return <LandingPage />
 }

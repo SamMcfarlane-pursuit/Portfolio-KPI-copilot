@@ -1,17 +1,31 @@
 import OpenAI from 'openai'
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-})
+// Lazy initialization of OpenAI client
+let openai: OpenAI | null = null
+
+function getOpenAIClient(): OpenAI | null {
+  if (process.env.DISABLE_OPENAI === 'true' || !process.env.OPENAI_API_KEY) {
+    return null
+  }
+
+  if (!openai) {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    })
+  }
+
+  return openai
+}
 
 export async function generateWithOpenAI(question: string): Promise<string> {
-  if (!process.env.OPENAI_API_KEY) {
-    throw new Error('OpenAI API key not configured')
+  const client = getOpenAIClient()
+
+  if (!client) {
+    throw new Error('OpenAI API key not configured or disabled')
   }
 
   try {
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages: [
         {
@@ -46,6 +60,15 @@ export async function generateWithOpenAI(question: string): Promise<string> {
 
 export async function openaiHealthCheck() {
   try {
+    // Check if OpenAI is disabled
+    if (process.env.DISABLE_OPENAI === 'true') {
+      return {
+        status: 'disabled',
+        configured: false,
+        message: 'OpenAI is intentionally disabled - using Llama AI instead'
+      }
+    }
+
     // Skip health check during build time
     if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL) {
       return {
@@ -55,7 +78,9 @@ export async function openaiHealthCheck() {
       }
     }
 
-    if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
+    const client = getOpenAIClient()
+
+    if (!client || !process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === 'your-openai-api-key-here') {
       return {
         status: 'not_configured',
         configured: false,
@@ -64,7 +89,7 @@ export async function openaiHealthCheck() {
     }
 
     // Simple test request
-    const completion = await openai.chat.completions.create({
+    const completion = await client.chat.completions.create({
       model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
       messages: [{ role: 'user', content: 'Hello' }],
       max_tokens: 5,

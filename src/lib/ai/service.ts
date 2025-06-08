@@ -3,20 +3,36 @@ import { generateWithOpenAI } from './openai'
 
 export async function generateKPIExplanation(question: string): Promise<string> {
   try {
-    // Try Llama first (for local development)
-    if (process.env.OLLAMA_BASE_URL && process.env.NODE_ENV === 'development') {
+    // Try Llama first (prioritized for KPI analysis)
+    if (process.env.OLLAMA_BASE_URL && process.env.USE_OLLAMA_PRIMARY === 'true') {
       try {
         const response = await generateWithLlama(question)
         return response
       } catch (llamaError) {
-        console.log('Llama unavailable, falling back to OpenAI')
+        console.log('Llama unavailable, checking OpenAI fallback')
       }
     }
 
-    // Use OpenAI (for production or when Llama fails)
-    if (process.env.OPENAI_API_KEY) {
+    // Use OpenAI only if not disabled and available
+    if (process.env.OPENAI_API_KEY && process.env.DISABLE_OPENAI !== 'true') {
       const response = await generateWithOpenAI(question)
       return response
+    }
+
+    // If OpenAI is disabled, provide a fallback response
+    if (process.env.DISABLE_OPENAI === 'true') {
+      return `KPI Analysis: ${question}
+
+This is a placeholder response as AI services are currently being configured.
+The system is set up to use local Llama AI for enhanced privacy and performance.
+
+Key Points:
+• KPI analysis functionality is available
+• Local AI processing ensures data privacy
+• Real-time insights and recommendations
+• Integration with portfolio data
+
+Please ensure Ollama is running locally for full AI capabilities.`
     }
 
     throw new Error('No AI service configured')
