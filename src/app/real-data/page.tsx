@@ -7,36 +7,48 @@ import { UnifiedSystemStatus } from '@/components/system/UnifiedSystemStatus'
 import { DataTabs } from '@/components/data/DataTabs'
 import { Database } from 'lucide-react'
 
+// Force dynamic rendering to avoid build-time database queries
+export const dynamic = 'force-dynamic'
+
 // Real Data Portfolio Dashboard
 export default async function RealDataPage() {
-  // Fetch real portfolio data
-  const portfolios = await prisma.portfolio.findMany({
-    include: {
-      fund: {
-        include: {
-          organization: true
+  let portfolios = []
+  let totalKPIs = 0
+  let latestKPIs = []
+
+  try {
+    // Fetch real portfolio data
+    portfolios = await prisma.portfolio.findMany({
+      include: {
+        fund: {
+          include: {
+            organization: true
+          }
+        },
+        kpis: {
+          orderBy: { period: 'desc' },
+          take: 12
         }
       },
-      kpis: {
-        orderBy: { period: 'desc' },
-        take: 12
-      }
-    },
-    orderBy: { createdAt: 'desc' }
-  })
+      orderBy: { createdAt: 'desc' }
+    })
 
-  // Calculate real metrics
+    // Calculate real metrics
+    totalKPIs = await prisma.kPI.count()
+
+    // Get latest KPIs by category
+    latestKPIs = await prisma.kPI.findMany({
+      orderBy: { period: 'desc' },
+      take: 20,
+      include: {
+        portfolio: true
+      }
+    })
+  } catch (error) {
+    console.log('Database not initialized yet, using empty data')
+  }
+
   const totalInvestment = portfolios.reduce((sum, p) => sum + (p.investment || 0), 0)
-  const totalKPIs = await prisma.kPI.count()
-  
-  // Get latest KPIs by category
-  const latestKPIs = await prisma.kPI.findMany({
-    orderBy: { period: 'desc' },
-    take: 20,
-    include: {
-      portfolio: true
-    }
-  })
 
   // Calculate portfolio performance
   const portfolioPerformance = portfolios.map(portfolio => {
