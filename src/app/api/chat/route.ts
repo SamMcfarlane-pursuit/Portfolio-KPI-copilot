@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createChatCompletion, SYSTEM_PROMPTS } from '@/lib/openai'
 import { ollamaService, OLLAMA_SYSTEM_PROMPTS } from '@/lib/ollama'
+import { ollamaCloudService, isOllamaCloudAvailable } from '@/lib/ai/ollama-cloud'
 import { searchSimilarDocuments } from '@/lib/pinecone'
 import { businessMetrics } from '@/lib/business/metrics'
 
@@ -50,29 +51,40 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Try Ollama first (local development), fallback to OpenAI (production)
+    // Enhanced AI service selection with cloud Ollama support
     let response: string
-    try {
-      // Check if we're in production or if Ollama is not available
-      const isProduction = process.env.NODE_ENV === 'production'
-      const ollamaHealthy = !isProduction && await ollamaService.isHealthy()
+    let aiProvider = 'fallback'
 
-      if (ollamaHealthy) {
-        console.log('Using Ollama for AI response')
-        response = await ollamaService.chat(chatMessages)
+    try {
+      // Try cloud Ollama first (production-ready)
+      const cloudOllamaAvailable = await isOllamaCloudAvailable()
+
+      if (cloudOllamaAvailable) {
+        console.log('Using Cloud Ollama for AI response')
+        response = await ollamaCloudService.chat(chatMessages)
+        aiProvider = 'ollama-cloud'
       } else {
-        console.log('Attempting OpenAI for AI response')
-        try {
-          // Use OpenAI (production fallback)
-          response = await createChatCompletion(chatMessages, {
-            model: 'gpt-4o-mini',
-            temperature: 0.7,
-            maxTokens: 1000
-          })
-        } catch (openaiError) {
-          console.log('OpenAI unavailable, providing fallback response')
-          // Provide a helpful fallback response
-          response = `I'm currently operating in offline mode. Here's what I can tell you about your query:
+        // Fallback to local Ollama (development)
+        const localOllamaHealthy = await ollamaService.isHealthy()
+
+        if (localOllamaHealthy) {
+          console.log('Using Local Ollama for AI response')
+          response = await ollamaService.chat(chatMessages)
+          aiProvider = 'ollama-local'
+        } else {
+          console.log('Attempting OpenAI for AI response')
+          try {
+            // Use OpenAI (production fallback)
+            response = await createChatCompletion(chatMessages, {
+              model: 'gpt-4o-mini',
+              temperature: 0.7,
+              maxTokens: 1000
+            })
+            aiProvider = 'openai'
+          } catch (openaiError) {
+            console.log('OpenAI unavailable, providing fallback response')
+            // Provide a helpful fallback response
+            response = `I'm currently operating in offline mode. Here's what I can tell you about your query:
 
 ${chatMessages[chatMessages.length - 1]?.content || 'your request'}
 

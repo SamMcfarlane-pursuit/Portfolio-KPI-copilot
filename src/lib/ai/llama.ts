@@ -2,13 +2,18 @@ import { Ollama } from "@langchain/community/llms/ollama"
 import { ChatOllama } from "@langchain/community/chat_models/ollama"
 import { HumanMessage, SystemMessage } from "@langchain/core/messages"
 
-// Llama Configuration
+// Llama Configuration with Production Optimization
 export const LLAMA_CONFIG = {
   baseUrl: process.env.OLLAMA_BASE_URL || "http://localhost:11434",
-  model: process.env.LLAMA_MODEL || "llama3.2:3b", // Lightweight model for development
-  temperature: 0.1,
-  maxTokens: 2000,
-  timeout: 30000, // 30 seconds
+  model: process.env.LLAMA_MODEL || "llama3.2:3b",
+  temperature: parseFloat(process.env.LLAMA_TEMPERATURE || "0.1"),
+  maxTokens: parseInt(process.env.LLAMA_MAX_TOKENS || "2000"),
+  timeout: parseInt(process.env.LLAMA_TIMEOUT || "30000"),
+  // Production optimizations
+  retryAttempts: 3,
+  retryDelay: 1000,
+  connectionPoolSize: 5,
+  enableFallback: process.env.ENABLE_LLAMA_FALLBACK !== "false"
 }
 
 // Portfolio Operations System Prompts
@@ -83,16 +88,37 @@ export function initializeLlama(): ChatOllama {
   return llamaChat
 }
 
-// Check if Llama/Ollama is available
+// Enhanced Llama availability check with retry logic
 export async function isLlamaAvailable(): Promise<boolean> {
-  try {
-    const llama = initializeLlama()
-    await llama.invoke([new HumanMessage("test")])
-    return true
-  } catch (error) {
-    console.warn('Llama/Ollama not available:', error)
+  // Skip in production build environment
+  if (process.env.NODE_ENV === 'production' && !process.env.VERCEL_URL) {
     return false
   }
+
+  for (let attempt = 1; attempt <= LLAMA_CONFIG.retryAttempts; attempt++) {
+    try {
+      // First try a simple HTTP health check
+      const response = await fetch(`${LLAMA_CONFIG.baseUrl}/api/tags`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      })
+
+      if (response.ok) {
+        // If HTTP check passes, try a simple model invocation
+        const llama = initializeLlama()
+        await llama.invoke([new HumanMessage("test")])
+        return true
+      }
+    } catch (error) {
+      console.warn(`Llama availability check attempt ${attempt}/${LLAMA_CONFIG.retryAttempts} failed:`, error)
+
+      if (attempt < LLAMA_CONFIG.retryAttempts) {
+        await new Promise(resolve => setTimeout(resolve, LLAMA_CONFIG.retryDelay * attempt))
+      }
+    }
+  }
+
+  return false
 }
 
 // Generate with Llama (alias for compatibility)
