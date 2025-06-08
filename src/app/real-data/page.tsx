@@ -12,9 +12,9 @@ export const dynamic = 'force-dynamic'
 
 // Real Data Portfolio Dashboard
 export default async function RealDataPage() {
-  let portfolios = []
+  let portfolios: any[] = []
   let totalKPIs = 0
-  let latestKPIs = []
+  let latestKPIs: any[] = []
 
   try {
     // Fetch real portfolio data
