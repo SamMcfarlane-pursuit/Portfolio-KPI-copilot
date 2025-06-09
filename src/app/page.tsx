@@ -14,7 +14,8 @@ import {
   Zap,
   Brain,
   ArrowRight,
-  CheckCircle
+  CheckCircle,
+  ExternalLink
 } from 'lucide-react'
 
 // Helper function to check if environment variable exists and is not empty
