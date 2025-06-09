@@ -100,6 +100,8 @@ ${chatMessages[chatMessages.length - 1]?.content || 'your request'}
 • AI Services: 🔄 Local processing mode
 
 For full AI capabilities, please ensure proper API configuration. The system continues to provide comprehensive portfolio management features.`
+            aiProvider = 'fallback'
+          }
         }
       }
     } catch (error) {
