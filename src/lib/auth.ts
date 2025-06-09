@@ -189,23 +189,31 @@ export const authOptions: NextAuthOptions = {
     },
     async signIn({ user, account, profile }) {
       try {
-        // Only interact with database if it's available
+        // Only interact with database if it's available and working
         if (hasEnvVar('DATABASE_URL')) {
-          // Check if user exists in database
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email! },
-          })
+          try {
+            // Test database connectivity first
+            await prisma.user.count()
 
-          // If user doesn't exist, create them with default role
-          if (!existingUser) {
-            await prisma.user.create({
-              data: {
-                email: user.email!,
-                name: user.name,
-                image: user.image,
-                role: 'VIEWER', // Default role for new users
-              },
+            // Check if user exists in database
+            const existingUser = await prisma.user.findUnique({
+              where: { email: user.email! },
             })
+
+            // If user doesn't exist, create them with default role
+            if (!existingUser) {
+              await prisma.user.create({
+                data: {
+                  email: user.email!,
+                  name: user.name,
+                  image: user.image,
+                  role: 'VIEWER', // Default role for new users
+                },
+              })
+            }
+          } catch (dbError) {
+            console.warn('Database unavailable during sign-in, continuing without database operations:', dbError)
+            // Continue with authentication even if database fails
           }
         }
 
@@ -223,9 +231,12 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signIn({ user, account, profile, isNewUser }) {
-      // Log sign-in event for audit trail (only if database is available)
+      // Log sign-in event for audit trail (only if database is available and working)
       if (user.id && hasEnvVar('DATABASE_URL')) {
         try {
+          // Test database connectivity first
+          await prisma.user.count()
+
           await prisma.auditLog.create({
             data: {
               userId: user.id,
@@ -239,14 +250,17 @@ export const authOptions: NextAuthOptions = {
             },
           })
         } catch (error) {
-          console.error('Failed to log sign-in event:', error)
+          console.warn('Failed to log sign-in event (database unavailable):', error)
         }
       }
     },
     async signOut({ session, token }) {
-      // Log sign-out event (only if database is available)
+      // Log sign-out event (only if database is available and working)
       if (token?.userId && hasEnvVar('DATABASE_URL')) {
         try {
+          // Test database connectivity first
+          await prisma.user.count()
+
           await prisma.auditLog.create({
             data: {
               userId: token.userId as string,
@@ -256,7 +270,7 @@ export const authOptions: NextAuthOptions = {
             },
           })
         } catch (error) {
-          console.error('Failed to log sign-out event:', error)
+          console.warn('Failed to log sign-out event (database unavailable):', error)
         }
       }
     },
