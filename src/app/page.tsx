@@ -87,23 +87,26 @@ function LandingPage() {
             ) : (
               <>
                 <Link href="/dashboard">
-                  <Button size="lg" className="w-full sm:w-auto">
-                    Try Demo
+                  <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
+                    🚀 Try Demo Now
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                <Button variant="outline" size="lg" className="w-full sm:w-auto" disabled>
-                  Authentication Setup Required
-                </Button>
+                <Link href="/auth/signin">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto border-2">
+                    Set Up Authentication
+                    <ExternalLink className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
               </>
             )}
           </div>
 
           {!authConfigured && (
-            <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg max-w-2xl mx-auto">
-              <p className="text-amber-800 text-sm">
-                <strong>Demo Mode:</strong> Authentication providers are not configured.
-                You can explore the interface, but some features will be limited.
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-2xl mx-auto">
+              <p className="text-blue-800 text-sm">
+                <strong>🎯 Demo Mode Active:</strong> Explore the full interface with sample data instantly!
+                No signup required - just click "Try Demo Now" above.
               </p>
             </div>
           )}

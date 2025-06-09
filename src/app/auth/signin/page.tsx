@@ -231,17 +231,24 @@ export default function SignInPage() {
               <div className="text-center py-8">
                 <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
-                  Authentication Not Configured
+                  Authentication Setup Required
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  No authentication providers are currently configured.
-                  You can still explore the application in demo mode.
+                  Google OAuth is configured but needs to be published in Google Console.
+                  You can explore the application in demo mode or set up authentication.
                 </p>
-                <Link href="/dashboard">
-                  <Button variant="outline" className="w-full">
-                    Continue to Demo
-                  </Button>
-                </Link>
+                <div className="space-y-3">
+                  <Link href="/setup/oauth">
+                    <Button className="w-full">
+                      📋 Setup Google OAuth
+                    </Button>
+                  </Link>
+                  <Link href="/dashboard">
+                    <Button variant="outline" className="w-full">
+                      🚀 Continue to Demo
+                    </Button>
+                  </Link>
+                </div>
               </div>
             )}
 

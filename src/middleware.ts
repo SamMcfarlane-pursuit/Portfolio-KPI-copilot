@@ -162,11 +162,18 @@ export default withAuth(
             req.nextUrl.pathname === '/' ||
             req.nextUrl.pathname.startsWith('/api/auth/') ||
             req.nextUrl.pathname.startsWith('/api/health') ||
-            req.nextUrl.pathname.startsWith('/api/docs')) {
+            req.nextUrl.pathname.startsWith('/api/docs') ||
+            req.nextUrl.pathname.startsWith('/api/system/') ||
+            req.nextUrl.pathname === '/dashboard') {
           return true
         }
 
-        // Require authentication for protected routes
+        // Allow demo mode access to dashboard and related pages
+        if (req.nextUrl.pathname.startsWith('/dashboard')) {
+          return true
+        }
+
+        // Require authentication for other protected routes
         return !!token
       }
     }
