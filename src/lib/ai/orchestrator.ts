@@ -5,6 +5,7 @@
 
 import { openRouterService } from './openrouter'
 import { openaiService } from './openai'
+import { ollamaService } from './ollama'
 import { analyticsEngine } from './analytics-engine'
 
 export interface AIRequest {
@@ -63,6 +64,7 @@ export class AIOrchestrator {
     // Register available providers
     this.providers.set('openrouter', openRouterService)
     this.providers.set('openai', openaiService)
+    this.providers.set('ollama', ollamaService)
 
     // Initialize capabilities
     this.updateCapabilities()
@@ -254,7 +256,7 @@ export class AIOrchestrator {
         case 'openrouter':
           return openRouterService.isAvailable()
         case 'ollama':
-          return false // Ollama service removed
+          return ollamaService.isAvailable()
         case 'openai':
           return !!process.env.OPENAI_API_KEY && process.env.DISABLE_OPENAI !== 'true'
         default:
@@ -280,7 +282,10 @@ export class AIOrchestrator {
     }
 
     if (provider.name === 'ollama') {
-      throw new Error('Ollama service not available')
+      return await instance.chat(input.messages, {
+        temperature: preferences.temperature || 0.7,
+        maxTokens: preferences.maxTokens || 1000
+      })
     }
 
     if (provider.name === 'openai') {
@@ -358,7 +363,7 @@ Provide:
     }
 
     if (provider.name === 'ollama') {
-      throw new Error('Ollama service not available')
+      return await instance.explainConcept(input.query, input.context)
     }
 
     return 'Explanation service temporarily unavailable'
@@ -393,7 +398,13 @@ Keep the summary clear and executive-friendly.`
     }
 
     if (provider.name === 'ollama') {
-      throw new Error('Ollama service not available')
+      return await instance.chat(
+        [{ role: 'user', content: summaryPrompt }],
+        {
+          temperature: 0.1,
+          maxTokens: 500
+        }
+      )
     }
 
     return 'Summary service temporarily unavailable'
@@ -496,7 +507,11 @@ Keep the summary clear and executive-friendly.`
           return []
         }
       case 'ollama':
-        return ['llama3.2:latest']
+        try {
+          return await ollamaService.listModels()
+        } catch {
+          return ['llama3.2:latest']
+        }
       case 'openai':
         return ['gpt-4o', 'gpt-4o-mini']
       default:

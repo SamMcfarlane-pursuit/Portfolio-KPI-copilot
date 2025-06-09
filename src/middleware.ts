@@ -164,12 +164,21 @@ export default withAuth(
             req.nextUrl.pathname.startsWith('/api/health') ||
             req.nextUrl.pathname.startsWith('/api/docs') ||
             req.nextUrl.pathname.startsWith('/api/system/') ||
-            req.nextUrl.pathname === '/dashboard') {
+            req.nextUrl.pathname.startsWith('/api/test/') ||
+            req.nextUrl.pathname === '/dashboard' ||
+            req.nextUrl.pathname === '/data' ||
+            req.nextUrl.pathname.startsWith('/portfolio') ||
+            req.nextUrl.pathname.startsWith('/analytics') ||
+            req.nextUrl.pathname.startsWith('/ai-assistant')) {
           return true
         }
 
         // Allow demo mode access to dashboard and related pages
-        if (req.nextUrl.pathname.startsWith('/dashboard')) {
+        if (req.nextUrl.pathname.startsWith('/dashboard') ||
+            req.nextUrl.pathname.startsWith('/data') ||
+            req.nextUrl.pathname.startsWith('/portfolio') ||
+            req.nextUrl.pathname.startsWith('/analytics') ||
+            req.nextUrl.pathname.startsWith('/ai-assistant')) {
           return true
         }
 
