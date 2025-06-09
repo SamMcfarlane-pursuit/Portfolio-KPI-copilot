@@ -1,91 +1,106 @@
-import { NextResponse } from 'next/server'
-import { checkDatabaseConnection } from '@/lib/prisma'
-import { llamaHealthCheck } from '@/lib/ai/llama'
-import { openaiHealthCheck } from '@/lib/ai/openai'
+/**
+ * Production Health Check API
+ * Comprehensive health monitoring endpoint for enterprise deployment
+ */
 
-export async function GET() {
+import { NextRequest, NextResponse } from 'next/server'
+import { healthMonitor } from '@/lib/monitoring/health-monitor'
+
+// GET comprehensive health check
+export async function GET(request: NextRequest) {
+  const startTime = Date.now()
+
   try {
-    const startTime = Date.now()
-    
-    // Check database connection
-    const dbHealth = await checkDatabaseConnection()
+    const { searchParams } = new URL(request.url)
+    const detailed = searchParams.get('detailed') === 'true'
+    const component = searchParams.get('component')
 
-    // Simple system health check
-    const systemHealth = {
-      status: 'healthy',
-      uptime: process.uptime(),
-      memory: process.memoryUsage(),
-      nodeVersion: process.version
-    }
-
-    // Check OpenAI
-    const openaiHealth = await openaiHealthCheck()
-
-    // Check Llama AI
-    const llamaHealth = await llamaHealthCheck()
-
-    // Supabase check (not configured yet)
-    const supabaseHealth = { status: 'not_configured', message: 'Using Prisma/SQLite' }
-
+    // Record this request
     const responseTime = Date.now() - startTime
+    healthMonitor.recordRequest(responseTime, false)
 
-    // Enhanced status calculation
-    const criticalServices = [dbHealth]
-    const optionalServices = [openaiHealth, llamaHealth, supabaseHealth]
+    if (component) {
+      // Check specific component
+      const health = await healthMonitor.performHealthCheck()
+      const componentCheck = health.checks.find(c => c.name === component)
 
-    const criticalHealthy = criticalServices.every(service => service.status === 'healthy')
-    const hasOptionalServices = optionalServices.some(service => service.status === 'healthy')
+      if (!componentCheck) {
+        return NextResponse.json(
+          { error: 'Component not found', available: health.checks.map(c => c.name) },
+          { status: 404 }
+        )
+      }
 
-    let overallStatus: 'healthy' | 'degraded' | 'unhealthy'
-    if (criticalHealthy && hasOptionalServices) {
-      overallStatus = 'healthy'
-    } else if (criticalHealthy) {
-      overallStatus = 'degraded'
-    } else {
-      overallStatus = 'unhealthy'
+      return NextResponse.json({
+        component: componentCheck,
+        timestamp: new Date().toISOString()
+      })
     }
 
-    // Calculate service counts
-    const serviceCounts = {
-      healthy: [dbHealth, systemHealth, openaiHealth, llamaHealth, supabaseHealth]
-        .filter(service => service.status === 'healthy').length,
-      degraded: [dbHealth, systemHealth, openaiHealth, llamaHealth, supabaseHealth]
-        .filter(service => service.status === 'degraded' || service.status === 'not_configured').length,
-      unhealthy: [dbHealth, systemHealth, openaiHealth, llamaHealth, supabaseHealth]
-        .filter(service => service.status === 'unhealthy').length
+    // Full health check
+    const health = await healthMonitor.performHealthCheck()
+
+    // Return appropriate response based on health status
+    const statusCode = health.overall === 'healthy' ? 200 :
+                      health.overall === 'degraded' ? 200 : 503
+
+    const response = detailed ? health : {
+      status: health.overall,
+      uptime: health.uptime,
+      version: health.version,
+      environment: health.environment,
+      timestamp: health.timestamp,
+      summary: {
+        healthy: health.checks.filter(c => c.status === 'healthy').length,
+        degraded: health.checks.filter(c => c.status === 'degraded').length,
+        unhealthy: health.checks.filter(c => c.status === 'unhealthy').length,
+        total: health.checks.length
+      }
     }
 
-    return NextResponse.json({
-      success: overallStatus !== 'unhealthy',
-      status: overallStatus,
-      timestamp: new Date().toISOString(),
-      responseTime: `${responseTime}ms`,
-      services: {
-        database: dbHealth,
-        system: systemHealth,
-        openai: openaiHealth,
-        llama: llamaHealth,
-        supabase: supabaseHealth,
-      },
-      summary: serviceCounts,
-      version: '1.0.0',
-      environment: process.env.NODE_ENV,
-    }, {
-      status: overallStatus === 'unhealthy' ? 503 : 200
+    return NextResponse.json(response, {
+      status: statusCode,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     })
 
   } catch (error) {
     console.error('Health check error:', error)
-    
+
+    // Record error
+    const responseTime = Date.now() - startTime
+    healthMonitor.recordRequest(responseTime, true)
+
     return NextResponse.json(
       {
         status: 'unhealthy',
-        timestamp: new Date().toISOString(),
-        error: error instanceof Error ? error.message : String(error),
-        version: '1.0.0',
-        environment: process.env.NODE_ENV,
+        error: 'Health check failed',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
       },
-      { status: 500 }
+      { status: 503 }
     )
+  }
+}
+
+// HEAD request for simple health check (used by load balancers)
+export async function HEAD(request: NextRequest) {
+  try {
+    const health = await healthMonitor.performHealthCheck()
+    const statusCode = health.overall === 'unhealthy' ? 503 : 200
+
+    return new NextResponse(null, {
+      status: statusCode,
+      headers: {
+        'X-Health-Status': health.overall,
+        'X-Uptime': health.uptime.toString(),
+        'X-Version': health.version
+      }
+    })
+  } catch (error) {
+    return new NextResponse(null, { status: 503 })
   }
 }

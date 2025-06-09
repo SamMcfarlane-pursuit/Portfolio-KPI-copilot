@@ -193,8 +193,9 @@ export const authOptions: NextAuthOptions = {
           data: {
             userId: user.id,
             action: 'SIGN_IN',
-            resource: 'AUTH',
-            details: JSON.stringify({
+            resourceType: 'AUTH',
+            resourceId: user.id,
+            metadata: JSON.stringify({
               provider: account?.provider,
               isNewUser,
             }),
@@ -209,7 +210,8 @@ export const authOptions: NextAuthOptions = {
           data: {
             userId: token.userId as string,
             action: 'SIGN_OUT',
-            resource: 'AUTH',
+            resourceType: 'AUTH',
+            resourceId: token.userId as string,
           },
         })
       }

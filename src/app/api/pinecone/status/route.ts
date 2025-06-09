@@ -1,19 +1,21 @@
 import { NextResponse } from 'next/server'
-import { pinecone } from '@/lib/pinecone'
 
 export async function GET() {
   try {
-    const status = pinecone.getStatus()
-    
+    // Pinecone is deprecated in favor of Supabase vector search
     return NextResponse.json({
       success: true,
-      pinecone: status,
-      message: status.configured ? 'Pinecone is ready for AI-powered search!' : 'Pinecone not configured',
+      pinecone: {
+        configured: false,
+        available: false,
+        deprecated: true
+      },
+      message: 'Pinecone has been replaced with Supabase vector search',
       timestamp: new Date().toISOString()
     })
   } catch (error) {
     console.error('Pinecone status error:', error)
-    
+
     return NextResponse.json({
       success: false,
       error: 'Failed to get Pinecone status',

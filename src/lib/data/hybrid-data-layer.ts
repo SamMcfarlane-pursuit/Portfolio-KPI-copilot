@@ -1,24 +1,16 @@
 /**
  * Hybrid Data Access Layer
  * Provides unified interface for both Supabase and Prisma/SQLite
- * Automatically chooses the best available data source
+ * Automatically chooses the best available data source with intelligent fallback
  */
 
 import { PrismaClient } from '@prisma/client'
-import { createClient } from '@supabase/supabase-js'
-// import { Database } from '../supabase/types' // Commented out for now
+import { supabaseServer } from '@/lib/supabase/server'
+import { Database } from '@/lib/supabase/types'
+import RBACService from '@/lib/rbac'
 
 // Initialize clients
 const prisma = new PrismaClient()
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-
-const supabase = (supabaseUrl && supabaseAnonKey && 
-  supabaseUrl !== 'https://your-project.supabase.co' &&
-  supabaseAnonKey !== 'your-supabase-anon-key') 
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null
 
 // Configuration flags
 const USE_SUPABASE_PRIMARY = process.env.USE_SUPABASE_PRIMARY === 'true'
@@ -44,8 +36,8 @@ export class HybridDataLayer {
   private constructor() {
     this.status = {
       supabase: {
-        available: !!supabase,
-        configured: !!supabase,
+        available: supabaseServer.isConfigured(),
+        configured: supabaseServer.isConfigured(),
         connected: false
       },
       sqlite: {
@@ -70,8 +62,13 @@ export class HybridDataLayer {
     // Test Supabase connection
     if (this.status.supabase.available) {
       try {
-        const { error } = await supabase!.from('organizations').select('id').limit(1)
-        this.status.supabase.connected = !error || error.message.includes('does not exist')
+        const client = supabaseServer.getClient()
+        if (client) {
+          const { error } = await client.from('organizations').select('id').limit(1)
+          this.status.supabase.connected = !error || error.message.includes('does not exist')
+        } else {
+          this.status.supabase.connected = false
+        }
       } catch (error) {
         console.warn('Supabase connection failed:', error)
         this.status.supabase.connected = false
@@ -124,7 +121,7 @@ export class HybridDataLayer {
   } = {}) {
     const { organizationId, limit = 50, includeKPIs = false } = options
 
-    if (this.status.activeSource === 'supabase' && supabase) {
+    if (this.status.activeSource === 'supabase' && supabaseServer.isConfigured()) {
       return this.getPortfoliosFromSupabase({ organizationId, limit, includeKPIs })
     } else if (this.status.activeSource === 'sqlite') {
       return this.getPortfoliosFromSQLite({ organizationId, limit, includeKPIs })
@@ -135,17 +132,20 @@ export class HybridDataLayer {
 
   private async getPortfoliosFromSupabase(options: any) {
     const { organizationId, limit, includeKPIs } = options
+    const client = supabaseServer.getClient()
 
-    let query = supabase!
+    if (!client) {
+      throw new Error('Supabase client not available')
+    }
+
+    let query = client
       .from('portfolios')
       .select(`
         *,
-        funds (
+        organizations (
           id,
           name,
-          strategy,
-          vintage,
-          organization_id
+          industry
         )
         ${includeKPIs ? `,
         kpis (
@@ -154,15 +154,15 @@ export class HybridDataLayer {
           category,
           value,
           unit,
-          period,
-          confidence
+          period_date,
+          confidence_level
         )` : ''}
       `)
       .order('created_at', { ascending: false })
       .limit(limit)
 
     if (organizationId) {
-      query = query.eq('funds.organization_id', organizationId)
+      query = query.eq('organization_id', organizationId)
     }
 
     const { data, error } = await query
@@ -219,7 +219,7 @@ export class HybridDataLayer {
     timeframe?: number // months
     limit?: number
   } = {}) {
-    if (this.status.activeSource === 'supabase' && supabase) {
+    if (this.status.activeSource === 'supabase' && supabaseServer.isConfigured()) {
       return this.getKPIsFromSupabase(options)
     } else if (this.status.activeSource === 'sqlite') {
       return this.getKPIsFromSQLite(options)
@@ -230,8 +230,13 @@ export class HybridDataLayer {
 
   private async getKPIsFromSupabase(options: any) {
     const { portfolioId, organizationId, category, timeframe, limit = 100 } = options
+    const client = supabaseServer.getClient()
 
-    let query = supabase!
+    if (!client) {
+      throw new Error('Supabase client not available')
+    }
+
+    let query = client
       .from('kpis')
       .select(`
         *,
@@ -334,6 +339,61 @@ export class HybridDataLayer {
   }
 
   /**
+   * Create Company/Portfolio - Unified interface
+   */
+  async createCompany(companyData: {
+    name: string
+    sector: string
+    geography?: string
+    description?: string
+    investment: number
+    organizationId: string
+    userId?: string
+  }) {
+    if (this.status.activeSource === 'supabase' && supabaseServer.isConfigured()) {
+      return await supabaseServer.createPortfolio({
+        name: companyData.name,
+        description: companyData.description,
+        organization_id: companyData.organizationId,
+        user_id: companyData.userId,
+        industry: companyData.sector,
+        investment_amount: companyData.investment,
+        status: 'active'
+      })
+    } else if (this.status.activeSource === 'sqlite') {
+      // For SQLite, we need to create through the portfolio structure
+      const portfolio = await prisma.portfolio.create({
+        data: {
+          name: companyData.name,
+          sector: companyData.sector,
+          geography: companyData.geography || 'North America',
+          investment: companyData.investment,
+          fund: {
+            create: {
+              name: 'Default Fund',
+              fundNumber: `${companyData.organizationId}-DEFAULT`,
+              organizationId: companyData.organizationId,
+              totalSize: companyData.investment,
+              vintage: new Date().getFullYear()
+            }
+          }
+        },
+        include: {
+          fund: {
+            include: {
+              organization: true
+            }
+          }
+        }
+      })
+
+      return { data: portfolio, source: 'sqlite' }
+    } else {
+      throw new Error('No data source available')
+    }
+  }
+
+  /**
    * Create KPI - Unified interface
    */
   async createKPI(kpiData: {
@@ -347,8 +407,14 @@ export class HybridDataLayer {
     confidence?: number
     notes?: string
   }) {
-    if (this.status.activeSource === 'supabase' && supabase) {
-      const { data, error } = await supabase
+    if (this.status.activeSource === 'supabase' && supabaseServer.isConfigured()) {
+      const client = supabaseServer.getClient()
+
+      if (!client) {
+        throw new Error('Supabase client not available')
+      }
+
+      const { data, error } = await client
         .from('kpis')
         .insert([kpiData])
         .select()
@@ -391,10 +457,17 @@ export class HybridDataLayer {
     if (this.status.supabase.available) {
       const start = Date.now()
       try {
-        const { error } = await supabase!.from('organizations').select('id').limit(1)
-        health.supabase.responseTime = Date.now() - start
-        health.supabase.status = error ? 'error' : 'healthy'
-        if (error) health.supabase.error = error.message
+        const client = supabaseServer.getClient()
+        if (client) {
+          const { error } = await client.from('organizations').select('id').limit(1)
+          health.supabase.responseTime = Date.now() - start
+          health.supabase.status = error ? 'error' : 'healthy'
+          if (error) health.supabase.error = error.message
+        } else {
+          health.supabase.responseTime = Date.now() - start
+          health.supabase.status = 'error'
+          health.supabase.error = 'Supabase client not available'
+        }
       } catch (error) {
         health.supabase.responseTime = Date.now() - start
         health.supabase.status = 'error'

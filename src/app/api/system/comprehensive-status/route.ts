@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkDatabaseConnection } from '@/lib/prisma'
-import { isLlamaAvailable } from '@/lib/ai/llama'
-import { isOllamaCloudAvailable, ollamaCloudService } from '@/lib/ai/ollama-cloud'
-import { ollamaService } from '@/lib/ollama'
+import { aiOrchestrator } from '@/lib/ai/orchestrator'
 
 /**
  * Comprehensive System Status API
@@ -15,26 +13,23 @@ export async function GET(request: NextRequest) {
     // Run all health checks in parallel for better performance
     const [
       databaseHealth,
-      localOllamaHealth,
-      cloudOllamaHealth,
+      aiHealth,
       systemMetrics
     ] = await Promise.allSettled([
       checkDatabaseConnection(),
-      checkLocalOllama(),
-      checkCloudOllama(),
+      checkAIServices(),
       getSystemMetrics()
     ])
 
     // Process results
     const dbStatus = databaseHealth.status === 'fulfilled' ? databaseHealth.value : { status: 'error', error: databaseHealth.reason }
-    const localOllama = localOllamaHealth.status === 'fulfilled' ? localOllamaHealth.value : { status: 'error', error: localOllamaHealth.reason }
-    const cloudOllama = cloudOllamaHealth.status === 'fulfilled' ? cloudOllamaHealth.value : { status: 'error', error: cloudOllamaHealth.reason }
+    const aiStatus = aiHealth.status === 'fulfilled' ? aiHealth.value : { status: 'error', error: aiHealth.reason }
     const system = systemMetrics.status === 'fulfilled' ? systemMetrics.value : { status: 'error', error: systemMetrics.reason }
 
     // Determine overall system health
     const criticalServices = [dbStatus]
-    const aiServices = [localOllama, cloudOllama]
-    
+    const aiServices = [aiStatus]
+
     const criticalHealthy = criticalServices.every(service => service.status === 'healthy')
     const hasWorkingAI = aiServices.some(service => service.status === 'healthy')
     
@@ -48,7 +43,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Calculate service counts
-    const allServices = [dbStatus, localOllama, cloudOllama, system]
+    const allServices = [dbStatus, aiStatus, system]
     const serviceCounts = {
       healthy: allServices.filter(s => s.status === 'healthy').length,
       degraded: allServices.filter(s => s.status === 'degraded' || s.status === 'not_configured').length,
@@ -57,12 +52,14 @@ export async function GET(request: NextRequest) {
 
     // Determine best AI provider
     let recommendedAI = 'none'
-    if (cloudOllama.status === 'healthy') {
-      recommendedAI = 'ollama-cloud'
-    } else if (localOllama.status === 'healthy') {
-      recommendedAI = 'ollama-local'
-    } else {
-      recommendedAI = 'fallback'
+    if (aiStatus.status === 'healthy' && 'available' in aiStatus && aiStatus.available) {
+      if (aiStatus.providers?.openrouter?.available) {
+        recommendedAI = 'openrouter'
+      } else if (aiStatus.providers?.openai?.available) {
+        recommendedAI = 'openai'
+      } else if (aiStatus.providers?.ollama?.available) {
+        recommendedAI = 'ollama'
+      }
     }
 
     const responseTime = Date.now() - startTime
@@ -79,10 +76,8 @@ export async function GET(request: NextRequest) {
         system: system,
         ai: {
           recommended: recommendedAI,
-          providers: {
-            'ollama-cloud': cloudOllama,
-            'ollama-local': localOllama
-          }
+          status: aiStatus,
+          providers: ('providers' in aiStatus) ? aiStatus.providers : {}
         }
       },
 
@@ -99,8 +94,9 @@ export async function GET(request: NextRequest) {
         kpiProcessing: criticalHealthy && hasWorkingAI,
         portfolioAnalysis: criticalHealthy && hasWorkingAI,
         realTimeData: dbStatus.status === 'healthy',
-        cloudAI: cloudOllama.status === 'healthy',
-        localAI: localOllama.status === 'healthy'
+        openrouter: ('providers' in aiStatus) ? aiStatus.providers?.openrouter?.available || false : false,
+        openai: ('providers' in aiStatus) ? aiStatus.providers?.openai?.available || false : false,
+        ollama: ('providers' in aiStatus) ? aiStatus.providers?.ollama?.available || false : false
       },
 
       // Environment Info
@@ -115,8 +111,7 @@ export async function GET(request: NextRequest) {
       // Recommendations
       recommendations: generateRecommendations(overallStatus, {
         database: dbStatus,
-        cloudOllama,
-        localOllama,
+        aiStatus,
         hasWorkingAI
       })
     }
@@ -143,49 +138,32 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// Helper function to check local Ollama
-async function checkLocalOllama() {
+// Helper function to check AI services
+async function checkAIServices() {
   try {
-    const isAvailable = await isLlamaAvailable()
-    const status = ollamaService.getStatus()
-    
+    const aiStatus = await aiOrchestrator.getStatus()
+
     return {
-      status: isAvailable ? 'healthy' : 'not_configured',
-      available: isAvailable,
-      ...status,
-      type: 'local'
+      status: aiStatus.available ? 'healthy' : 'not_configured',
+      available: aiStatus.available,
+      providers: aiStatus,
+      message: aiStatus.available ?
+        'AI services are available for analysis' :
+        'No AI services configured. Set up OpenRouter, OpenAI, or Ollama for AI features.',
+      lastChecked: new Date().toISOString(),
+      type: 'orchestrated'
     }
   } catch (error) {
     return {
-      status: 'unhealthy',
+      status: 'error',
       available: false,
-      error: error instanceof Error ? error.message : String(error),
-      type: 'local'
+      error: error instanceof Error ? error.message : 'Unknown error',
+      type: 'orchestrated'
     }
   }
 }
 
-// Helper function to check cloud Ollama
-async function checkCloudOllama() {
-  try {
-    const isAvailable = await isOllamaCloudAvailable()
-    const status = ollamaCloudService.getStatus()
-    
-    return {
-      status: isAvailable ? 'healthy' : 'not_configured',
-      available: isAvailable,
-      ...status,
-      type: 'cloud'
-    }
-  } catch (error) {
-    return {
-      status: 'unhealthy',
-      available: false,
-      error: error instanceof Error ? error.message : String(error),
-      type: 'cloud'
-    }
-  }
-}
+
 
 // Helper function to get system metrics
 async function getSystemMetrics() {
@@ -218,8 +196,7 @@ function generateRecommendations(
   overallStatus: string,
   services: {
     database: any
-    cloudOllama: any
-    localOllama: any
+    aiStatus: any
     hasWorkingAI: boolean
   }
 ) {
@@ -234,11 +211,13 @@ function generateRecommendations(
   }
 
   if (!services.hasWorkingAI) {
-    recommendations.push('🤖 AI Services: No AI providers available. Consider setting up Ollama or OpenAI.')
+    recommendations.push('🤖 AI Services: No AI providers available. Consider setting up OpenRouter, OpenAI, or Ollama.')
   }
 
-  if (services.cloudOllama.status !== 'healthy' && services.localOllama.status !== 'healthy') {
-    recommendations.push('⚡ Performance: Install Ollama locally for better AI performance.')
+  if ('providers' in services.aiStatus &&
+      !services.aiStatus.providers?.openrouter?.available &&
+      !services.aiStatus.providers?.openai?.available) {
+    recommendations.push('⚡ Performance: Configure OpenRouter or OpenAI for enhanced AI capabilities.')
   }
 
   if (overallStatus === 'healthy') {

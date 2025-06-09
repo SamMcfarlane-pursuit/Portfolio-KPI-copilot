@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { analyzeKPIsWithLlama, isLlamaAvailable } from '@/lib/ai/llama'
+import { aiOrchestrator } from '@/lib/ai/orchestrator'
 import { hybridData, initializeHybridData } from '@/lib/data/hybrid-data-layer'
 
 /**
@@ -39,7 +39,8 @@ export async function POST(request: NextRequest) {
     const dataStatus = await initializeHybridData()
     
     // Check AI availability
-    const llamaAvailable = await isLlamaAvailable()
+    const aiStatus = await aiOrchestrator.getStatus()
+    const llamaAvailable = aiStatus.ollama.available
     
     console.log('📊 System status:', {
       dataSource: dataStatus.activeSource,
@@ -55,11 +56,21 @@ export async function POST(request: NextRequest) {
       console.log('🤖 Using Llama AI for advanced KPI analysis...')
       
       try {
-        analysisResult = await analyzeKPIsWithLlama({
-          portfolioId,
-          organizationId,
-          query,
-          timeframe
+        analysisResult = await aiOrchestrator.processRequest({
+          type: 'analysis',
+          input: {
+            portfolioId,
+            organizationId,
+            query,
+            timeframe
+          },
+          context: {
+            organizationId,
+            portfolioId
+          },
+          preferences: {
+            aiProvider: 'ollama'
+          }
         })
 
         return NextResponse.json({
@@ -67,12 +78,12 @@ export async function POST(request: NextRequest) {
           analysis: {
             type: 'llama_advanced',
             query,
-            result: analysisResult.analysis,
-            insights: analysisResult.insights,
-            recommendations: analysisResult.recommendations,
-            dataSource: analysisResult.dataSource,
-            processingTime: analysisResult.processingTime,
-            aiProvider: 'llama',
+            result: analysisResult.data?.analysis || analysisResult.data,
+            insights: analysisResult.data?.insights || [],
+            recommendations: analysisResult.data?.recommendations || [],
+            dataSource: analysisResult.data?.dataSource || 'ai',
+            processingTime: analysisResult.metadata.processingTime,
+            aiProvider: analysisResult.metadata.provider,
             timestamp: new Date().toISOString()
           },
           systemStatus: {
@@ -280,7 +291,8 @@ function generateBasicRecommendations(kpis: any[], query: string): string[] {
 export async function GET() {
   try {
     const dataStatus = await initializeHybridData()
-    const llamaAvailable = await isLlamaAvailable()
+    const aiStatus = await aiOrchestrator.getStatus()
+    const llamaAvailable = aiStatus.ollama.available
     const healthCheck = await hybridData.healthCheck()
 
     return NextResponse.json({

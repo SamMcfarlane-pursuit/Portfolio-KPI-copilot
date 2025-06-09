@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { withRBAC, PERMISSIONS } from '@/lib/middleware/rbac-middleware'
+import RBACService from '@/lib/rbac'
 
 export async function GET(request: NextRequest) {
   try {
@@ -281,8 +283,9 @@ export async function POST(request: NextRequest) {
       data: {
         userId: session.user.id,
         action: 'CREATE_KPIS',
-        resource: 'KPI',
-        details: JSON.stringify({
+        resourceType: 'KPI',
+        resourceId: organizationId,
+        metadata: JSON.stringify({
           count: createdKPIs.length,
           organizationId,
         }),

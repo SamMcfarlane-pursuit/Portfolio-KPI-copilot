@@ -241,17 +241,21 @@ model Alert {
 
 // Audit & Compliance
 model AuditLog {
-  id         String   @id @default(cuid())
-  userId     String
-  action     String
-  resource   String
-  resourceId String?
-  details    String?  // JSON as string for SQLite
-  ipAddress  String?
-  userAgent  String?
-  createdAt  DateTime @default(now())
+  id           String   @id @default(cuid())
+  userId       String
+  action       String
+  resourceType String   // Type of resource (ORGANIZATION, PORTFOLIO, KPI, etc.)
+  resourceId   String   // ID of the specific resource
+  metadata     String?  // JSON as string for SQLite - additional context
+  timestamp    DateTime @default(now())
+  ipAddress    String?
+  userAgent    String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
+  @@index([resourceType])
+  @@index([resourceId])
+  @@index([timestamp])
   @@map("audit_logs")
 }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { checkOpenAIHealth } from '@/lib/openai'
-import { systemCoordinator } from '@/lib/system/SystemCoordinator'
+import { healthMonitor } from '@/lib/monitoring/health-monitor'
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,13 +15,10 @@ export async function GET(request: NextRequest) {
     const healthChecks = await Promise.allSettled([
       // Database health
       checkDatabaseHealth(),
-      
-      // AI services health
-      checkOpenAIHealth(),
-      
-      // System coordinator health
-      systemCoordinator.getSystemStatus(),
-      
+
+      // System health monitoring
+      healthMonitor.performHealthCheck(),
+
       // Memory and performance check
       checkSystemPerformance()
     ])
@@ -32,9 +28,8 @@ export async function GET(request: NextRequest) {
       status: 'healthy',
       checks: {
         database: getCheckResult(healthChecks[0]),
-        ai: getCheckResult(healthChecks[1]),
-        system: getCheckResult(healthChecks[2]),
-        performance: getCheckResult(healthChecks[3])
+        system: getCheckResult(healthChecks[1]),
+        performance: getCheckResult(healthChecks[2])
       },
       metadata: {
         environment: process.env.NODE_ENV,

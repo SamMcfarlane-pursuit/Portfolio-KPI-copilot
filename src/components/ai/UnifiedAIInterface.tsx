@@ -16,7 +16,7 @@ import {
   Building2,
   DollarSign
 } from 'lucide-react'
-import { systemCoordinator } from '@/lib/system/SystemCoordinator'
+
 
 interface AIResponse {
   response: string

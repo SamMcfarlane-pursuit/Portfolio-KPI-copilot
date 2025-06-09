@@ -14,7 +14,15 @@ import {
   Zap,
   Activity
 } from 'lucide-react'
-import { systemCoordinator, SystemStatus } from '@/lib/system/SystemCoordinator'
+
+
+interface SystemStatus {
+  overall: 'healthy' | 'degraded' | 'unhealthy'
+  database: { status: string; message?: string }
+  ai: { status: string; message?: string }
+  system: { status: string; message?: string }
+  timestamp: string
+}
 
 interface UnifiedSystemStatusProps {
   variant?: 'full' | 'compact'

@@ -56,8 +56,9 @@ export async function POST(request: NextRequest) {
       data: {
         userId: user.id,
         action: 'USER_REGISTRATION',
-        resource: 'AUTH',
-        details: JSON.stringify({
+        resourceType: 'AUTH',
+        resourceId: user.id,
+        metadata: JSON.stringify({
           method: 'email_password',
           email: user.email,
         }),

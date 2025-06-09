@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { smartDataHandler } from '@/lib/data/SmartDataHandler'
+import { hybridData } from '@/lib/data/hybrid-data-layer'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 
@@ -32,29 +32,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create company using SmartDataHandler
-    const result = await smartDataHandler.createCompany({
+    // Create company using hybrid data layer
+    const result = await hybridData.createCompany({
       name: body.name,
       sector: body.sector,
       geography: body.geography || 'North America',
       description: body.description,
       investment: parseFloat(body.investment),
-      ownership: body.ownership ? parseFloat(body.ownership) : undefined,
-      valuation: body.valuation ? parseFloat(body.valuation) : undefined,
-      employees: body.employees ? parseInt(body.employees) : undefined,
-      founded: body.founded ? parseInt(body.founded) : undefined,
-      stage: body.stage,
-      website: body.website,
-      ceo: body.ceo,
       organizationId: body.organizationId,
-      status: body.status || 'ACTIVE'
+      userId: session.user.id
     })
 
     if (result.success) {
       return NextResponse.json({
         success: true,
         data: result.data,
-        message: `Company "${name}" created successfully with enhanced data`
+        message: `Company "${body.name}" created successfully with enhanced data`
       })
     } else {
       return NextResponse.json(
@@ -96,13 +89,13 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get company data using SmartDataHandler
-    const companies = await smartDataHandler.getCompanyData(organizationId)
+    // Get company data using hybrid data layer
+    const companies = await hybridData.getPortfolios({ organizationId })
 
     return NextResponse.json({
       success: true,
       data: companies,
-      count: companies.length
+      count: companies.data?.length || 0
     })
 
   } catch (error) {

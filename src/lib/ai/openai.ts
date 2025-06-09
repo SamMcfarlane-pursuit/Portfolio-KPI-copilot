@@ -110,3 +110,30 @@ export async function openaiHealthCheck() {
     }
   }
 }
+
+// Service object for orchestrator compatibility
+export const openaiService = {
+  async chat(messages: any[], options?: any) {
+    const client = getOpenAIClient()
+    if (!client) {
+      throw new Error('OpenAI not available')
+    }
+
+    const completion = await client.chat.completions.create({
+      model: options?.model || process.env.OPENAI_MODEL || 'gpt-4o-mini',
+      messages,
+      max_tokens: options?.maxTokens || 1000,
+      temperature: options?.temperature || 0.7,
+    })
+
+    return completion.choices[0]?.message?.content || ''
+  },
+
+  isAvailable() {
+    return !!process.env.OPENAI_API_KEY && process.env.DISABLE_OPENAI !== 'true'
+  },
+
+  async healthCheck() {
+    return await openaiHealthCheck()
+  }
+}

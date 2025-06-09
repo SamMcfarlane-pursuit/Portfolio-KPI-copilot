@@ -25,6 +25,11 @@ This guide walks you through setting up GitHub OAuth authentication for Portfoli
    Authorization callback URL: https://portfolio-kpi-copilot.vercel.app/api/auth/callback/github
    ```
 
+   **⚠️ CRITICAL: Ensure the callback URL matches EXACTLY:**
+   ```
+   https://portfolio-kpi-copilot.vercel.app/api/auth/callback/github
+   ```
+
 3. **Register the Application:**
    - Click "Register application"
    - You'll be redirected to your new OAuth app page

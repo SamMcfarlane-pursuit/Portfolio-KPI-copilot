@@ -1,12 +1,16 @@
-import { LandingPage } from '@/components/landing/landing-page'
+import { redirect } from 'next/navigation'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
+import { DashboardOverview } from '@/components/dashboard/DashboardOverview'
 
 export default async function HomePage() {
-  // Temporarily bypass auth for testing
-  // const session = await getServerSession(authOptions)
-  // if (session) {
-  //   redirect('/ai-dashboard')
-  // }
+  const session = await getServerSession(authOptions)
 
-  // Show landing page for all users (testing mode)
-  return <LandingPage />
+  // If user is authenticated, show dashboard
+  if (session) {
+    return <DashboardOverview />
+  }
+
+  // If not authenticated, the DashboardLayout will handle showing the landing page
+  return null
 }

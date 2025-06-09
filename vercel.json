@@ -12,13 +12,21 @@
       "maxDuration": 30,
       "memory": 1024
     },
-    "src/app/api/chat/route.ts": {
+    "src/app/api/ai/**/*.ts": {
       "maxDuration": 60,
       "memory": 1024
     },
-    "src/app/api/analyze-portfolio/route.ts": {
+    "src/app/api/supabase/**/*.ts": {
       "maxDuration": 45,
       "memory": 1024
+    },
+    "src/app/api/hybrid/**/*.ts": {
+      "maxDuration": 45,
+      "memory": 1024
+    },
+    "src/app/api/system/**/*.ts": {
+      "maxDuration": 30,
+      "memory": 512
     }
   },
   "headers": [
@@ -71,8 +79,16 @@
       "destination": "/api/system/status"
     },
     {
+      "source": "/comprehensive-status",
+      "destination": "/api/system/comprehensive-status"
+    },
+    {
       "source": "/docs",
       "destination": "/api/docs"
+    },
+    {
+      "source": "/supabase-status",
+      "destination": "/api/supabase/status"
     }
   ],
   "redirects": [
