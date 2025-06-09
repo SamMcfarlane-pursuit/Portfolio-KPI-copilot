@@ -13,9 +13,9 @@ const errorMessages: Record<string, { title: string; description: string; action
     description: 'There is a problem with the server configuration. Please contact support.',
   },
   AccessDenied: {
-    title: 'Access Denied',
-    description: 'You do not have permission to sign in with this account.',
-    action: 'Please contact your administrator for access.',
+    title: 'Google OAuth Access Denied',
+    description: 'Your Google account does not have permission to access this application. This usually means the OAuth app is in testing mode and you are not added as a test user.',
+    action: 'Contact the administrator to either publish the OAuth app or add you as a test user in Google Console.',
   },
   Verification: {
     title: 'Verification Error',
@@ -23,14 +23,14 @@ const errorMessages: Record<string, { title: string; description: string; action
     action: 'Please request a new verification email.',
   },
   OAuthSignin: {
-    title: 'OAuth Sign-in Error',
-    description: 'There was an error during the OAuth sign-in process.',
-    action: 'Please try signing in again.',
+    title: 'Google OAuth Sign-in Error',
+    description: 'There was an error during the Google OAuth sign-in process. This could be due to incorrect redirect URI configuration.',
+    action: 'Verify that the redirect URI in Google Console matches: https://portfolio-kpi-copilot.vercel.app/api/auth/callback/google',
   },
   OAuthCallback: {
-    title: 'OAuth Callback Error',
-    description: 'There was an error processing the OAuth callback.',
-    action: 'Please try signing in again.',
+    title: 'Google OAuth Callback Error',
+    description: 'There was an error processing the OAuth callback from Google. The redirect URI may be misconfigured.',
+    action: 'Check that the authorized redirect URI in Google Console is exactly: https://portfolio-kpi-copilot.vercel.app/api/auth/callback/google',
   },
   OAuthCreateAccount: {
     title: 'OAuth Account Creation Error',
@@ -158,15 +158,42 @@ export default function AuthErrorPage() {
 
         {/* Additional Help */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground mb-4">
-            Common solutions:
-          </p>
-          <div className="space-y-2 text-xs text-muted-foreground">
-            <p>• Clear your browser cache and cookies</p>
-            <p>• Try using an incognito/private browser window</p>
-            <p>• Disable browser extensions temporarily</p>
-            <p>• Check if your email provider is blocking sign-in emails</p>
-          </div>
+          {(error === 'AccessDenied' || error === 'OAuthSignin' || error === 'OAuthCallback') ? (
+            <>
+              <p className="text-sm text-muted-foreground mb-4">
+                Google OAuth Troubleshooting:
+              </p>
+              <div className="space-y-2 text-xs text-muted-foreground text-left bg-blue-50 p-4 rounded-lg">
+                <p><strong>Most Common Fix:</strong></p>
+                <p>• Go to Google Console → OAuth consent screen</p>
+                <p>• Either click "PUBLISH APP" or add your email to "Test users"</p>
+                <p></p>
+                <p><strong>Other Solutions:</strong></p>
+                <p>• Verify redirect URI: https://portfolio-kpi-copilot.vercel.app/api/auth/callback/google</p>
+                <p>• Check authorized domains include: portfolio-kpi-copilot.vercel.app</p>
+                <p>• Try incognito/private browser window</p>
+              </div>
+              <div className="mt-4">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/api/auth/test-oauth" target="_blank">
+                    View OAuth Configuration
+                  </Link>
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-muted-foreground mb-4">
+                Common solutions:
+              </p>
+              <div className="space-y-2 text-xs text-muted-foreground">
+                <p>• Clear your browser cache and cookies</p>
+                <p>• Try using an incognito/private browser window</p>
+                <p>• Disable browser extensions temporarily</p>
+                <p>• Check if your email provider is blocking sign-in emails</p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
