@@ -13,10 +13,24 @@ const signUpSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    
+
     // Validate input
     const validatedData = signUpSchema.parse(body)
     const { name, email, password } = validatedData
+
+    // Check if database is available
+    let databaseAvailable = false
+    try {
+      await prisma.user.count()
+      databaseAvailable = true
+    } catch (dbError) {
+      console.warn('Database not available, suggesting OAuth instead:', dbError)
+      return NextResponse.json({
+        error: 'Database temporarily unavailable. Please use Google Sign-In instead.',
+        suggestion: 'oauth',
+        oauthUrl: '/api/auth/signin/google'
+      }, { status: 503 })
+    }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
