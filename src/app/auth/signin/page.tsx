@@ -238,9 +238,14 @@ export default function SignInPage() {
                   You can explore the application in demo mode or set up authentication.
                 </p>
                 <div className="space-y-3">
-                  <Link href="/setup/oauth">
+                  <Link href="/verify/oauth">
                     <Button className="w-full">
-                      📋 Setup Google OAuth
+                      🔍 Verify OAuth Status
+                    </Button>
+                  </Link>
+                  <Link href="/setup/oauth">
+                    <Button variant="outline" className="w-full">
+                      📋 Setup Guide
                     </Button>
                   </Link>
                   <Link href="/dashboard">
