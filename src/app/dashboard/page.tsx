@@ -38,8 +38,25 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Allow demo mode - don't redirect if unauthenticated
+    // This enables users to explore the dashboard without authentication
     if (status === 'unauthenticated') {
-      redirect('/auth/signin');
+      // Load demo data instead of redirecting
+      setPortfolioSummary({
+        totalPortfolios: 12,
+        totalValuation: 2847392,
+        sectorBreakdown: [
+          { sector: 'Technology', count: 5, avgValuation: 450000 },
+          { sector: 'Healthcare', count: 3, avgValuation: 320000 },
+          { sector: 'Finance', count: 2, avgValuation: 280000 },
+          { sector: 'Energy', count: 2, avgValuation: 190000 }
+        ],
+        recentPerformance: {
+          growth: 12.5,
+          trend: 'up' as const
+        }
+      });
+      setLoading(false);
     }
   }, [status]);
 
@@ -128,10 +145,30 @@ export default function DashboardPage() {
     <div className="container mx-auto px-4 py-8">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Portfolio Dashboard</h1>
-        <p className="text-gray-600 mt-2">
-          Welcome back, {session.user?.name || session.user?.email}
-        </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Portfolio Dashboard</h1>
+            <p className="text-gray-600 mt-2">
+              {session
+                ? `Welcome back, ${session.user?.name || session.user?.email}`
+                : 'Demo Mode - Exploring Sample Portfolio Data'
+              }
+            </p>
+          </div>
+          {!session && (
+            <Badge variant="secondary" className="bg-amber-100 text-amber-800">
+              Demo Mode
+            </Badge>
+          )}
+        </div>
+        {!session && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 text-sm">
+              <strong>Demo Mode:</strong> You're viewing sample data.
+              <a href="/auth/signin" className="underline ml-1">Sign in</a> to access your real portfolio data.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Summary Cards */}
