@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
+import supabaseClientManager from '@/lib/supabase/client'
 
 // File processing utilities
 import { DocumentProcessor } from '@/lib/document-processor'
@@ -57,35 +55,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create upload directory if it doesn't exist
-    const uploadDir = join(process.cwd(), 'uploads', 'documents')
-    if (!existsSync(uploadDir)) {
-      await mkdir(uploadDir, { recursive: true })
-    }
-
-    // Generate unique filename
+    // Generate unique filename for Supabase storage
     const timestamp = Date.now()
     const randomString = Math.random().toString(36).substring(2, 15)
     const fileExtension = file.name.split('.').pop()
     const fileName = `${timestamp}_${randomString}.${fileExtension}`
-    const filePath = join(uploadDir, fileName)
 
-    // Save file to disk
+    // Process file in memory (Vercel compatible)
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    await writeFile(filePath, buffer)
+
+    // Upload to Supabase Storage (if configured)
+    let fileUrl: string | null = null
+    try {
+      if (supabaseClientManager.isConfigured()) {
+        const uploadPath = `documents/${userId}/${fileName}`
+        await supabaseClientManager.uploadFile('portfolio-documents', uploadPath, file)
+        fileUrl = supabaseClientManager.getFileUrl('portfolio-documents', uploadPath)
+      }
+    } catch (storageError) {
+      console.warn('Supabase storage not available, storing metadata only:', storageError)
+    }
 
     // Process document using the enhanced document processor
     const processedDocument = await DocumentProcessor.processDocument(buffer, file.type, file.name)
 
-    // Save document record to database
+    // Save document record to database (Vercel compatible)
     const document = await prisma.document.create({
       data: {
         title: file.name,
         filename: fileName,
         fileType: file.type,
         fileSize: file.size,
-        filePath: `/uploads/documents/${fileName}`,
+        filePath: fileUrl || '', // Supabase URL or empty if storage not available
         uploadedBy: userId,
         organizationId: '', // Will be set based on user's organization
         status: 'COMPLETED',
@@ -95,7 +97,9 @@ export async function POST(request: NextRequest) {
           originalName: file.name,
           uploadedAt: new Date().toISOString(),
           processingMetadata: processedDocument.metadata,
-          structuredData: processedDocument.structuredData
+          structuredData: processedDocument.structuredData,
+          storageType: fileUrl ? 'supabase' : 'metadata_only',
+          fileUrl: fileUrl
         })
       }
     })

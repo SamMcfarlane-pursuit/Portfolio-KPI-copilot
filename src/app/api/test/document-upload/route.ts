@@ -4,6 +4,7 @@ import { DocumentProcessor } from '@/lib/document-processor'
 /**
  * Public Test Endpoint for Document Upload Testing
  * Tests document processing capabilities without authentication
+ * VERCEL COMPATIBLE - No file system operations
  */
 export async function POST(request: NextRequest) {
   try {
@@ -44,10 +45,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Process document
+    // Process document in memory (Vercel compatible - no file system operations)
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    
+
     const processedDocument = await DocumentProcessor.processDocument(buffer, file.type, file.name)
 
     // Return processing results

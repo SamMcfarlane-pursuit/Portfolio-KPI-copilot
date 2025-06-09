@@ -12,6 +12,14 @@
       "maxDuration": 30,
       "memory": 1024
     },
+    "src/app/api/documents/**/*.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    },
+    "src/app/api/test/document-upload/route.ts": {
+      "maxDuration": 45,
+      "memory": 1024
+    },
     "src/app/api/ai/**/*.ts": {
       "maxDuration": 60,
       "memory": 1024
