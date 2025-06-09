@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { CheckCircle, ExternalLink, Copy, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
 import { useState } from 'react'
+import { UserGuide } from '@/components/oauth/UserGuide'
 
 export default function OAuthSetupPage() {
   const [copiedText, setCopiedText] = useState<string | null>(null)
@@ -40,9 +41,12 @@ export default function OAuthSetupPage() {
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
             <strong>Current Status:</strong> Google OAuth is configured but may need publishing in Google Console.
-            Follow the steps below to enable authentication.
+            You can enable authentication immediately without publishing - see options below.
           </AlertDescription>
         </Alert>
+
+        {/* User Guide for Enabling OAuth */}
+        <UserGuide className="mb-8" />
 
         {/* Step-by-step Guide */}
         <div className="space-y-6">

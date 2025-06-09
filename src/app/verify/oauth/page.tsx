@@ -301,6 +301,16 @@ export default function OAuthVerificationPage() {
                   </Button>
 
                   <Button variant="outline" asChild className="h-auto p-4">
+                    <Link href="/admin/test-users">
+                      <div className="text-center">
+                        <Settings className="h-6 w-6 mx-auto mb-2" />
+                        <div className="font-semibold">Test Users</div>
+                        <div className="text-xs text-gray-600">Manage access</div>
+                      </div>
+                    </Link>
+                  </Button>
+
+                  <Button variant="outline" asChild className="h-auto p-4">
                     <Link href="/dashboard">
                       <div className="text-center">
                         <CheckCircle className="h-6 w-6 mx-auto mb-2" />

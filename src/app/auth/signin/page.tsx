@@ -261,22 +261,33 @@ export default function SignInPage() {
             {oauthProviders.length > 0 && (
               <div className="space-y-3">
                 {oauthProviders.map((provider) => (
-                  <Button
-                    key={provider.id}
-                    variant="outline"
-                    className={`w-full h-12 ${getProviderColor(provider.id)}`}
-                    onClick={() => handleOAuthSignIn(provider.id)}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                    ) : (
-                      <>
-                        {getProviderIcon(provider.id)}
-                        <span className="ml-2">Continue with {provider.name}</span>
-                      </>
+                  <div key={provider.id} className="space-y-2">
+                    <Button
+                      variant="outline"
+                      className={`w-full h-12 ${getProviderColor(provider.id)}`}
+                      onClick={() => handleOAuthSignIn(provider.id)}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                      ) : (
+                        <>
+                          {getProviderIcon(provider.id)}
+                          <span className="ml-2">Continue with {provider.name}</span>
+                        </>
+                      )}
+                    </Button>
+                    {provider.id === 'google' && (
+                      <div className="text-xs text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                        <div className="font-semibold mb-1">📋 If you see "This app isn't verified":</div>
+                        <div className="space-y-1">
+                          <div>1. Click <strong>"Advanced"</strong> (small text at bottom)</div>
+                          <div>2. Click <strong>"Go to Portfolio KPI Copilot (unsafe)"</strong></div>
+                          <div>3. Continue with normal sign-in process</div>
+                        </div>
+                      </div>
                     )}
-                  </Button>
+                  </div>
                 ))}
               </div>
             )}
