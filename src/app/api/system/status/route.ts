@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// Force dynamic rendering for system status
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 /**
  * Unified System Status API
  * Consolidates all system health checks into a single endpoint

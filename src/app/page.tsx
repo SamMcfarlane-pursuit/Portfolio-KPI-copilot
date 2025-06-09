@@ -281,6 +281,10 @@ function LandingPage() {
   )
 }
 
+// Force dynamic rendering for authentication checks
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 export default async function HomePage() {
   try {
     const session = await getServerSession(authOptions)

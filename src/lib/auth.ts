@@ -110,61 +110,63 @@ const createProviders = () => {
 export const authOptions: NextAuthOptions = {
   // Only use Prisma adapter if database is available
   ...(hasEnvVar('DATABASE_URL') ? { adapter: PrismaAdapter(prisma) } : {}),
-  providers: createProviders(),
-  // Add Email/Password Credentials Provider only if database is available
-  ...(hasEnvVar('DATABASE_URL') ? [
-    CredentialsProvider({
-      id: 'credentials',
-      name: 'Email and Password',
-      credentials: {
-        email: {
-          label: 'Email',
-          type: 'email',
-          placeholder: 'your@email.com'
+  providers: [
+    ...createProviders(),
+    // Add Email/Password Credentials Provider only if database is available
+    ...(hasEnvVar('DATABASE_URL') ? [
+      CredentialsProvider({
+        id: 'credentials',
+        name: 'Email and Password',
+        credentials: {
+          email: {
+            label: 'Email',
+            type: 'email',
+            placeholder: 'your@email.com'
+          },
+          password: {
+            label: 'Password',
+            type: 'password',
+            placeholder: 'Your password'
+          },
         },
-        password: {
-          label: 'Password',
-          type: 'password',
-          placeholder: 'Your password'
+        async authorize(credentials) {
+          if (!credentials?.email || !credentials?.password) {
+            throw new Error('Email and password are required')
+          }
+
+          try {
+            const user = await prisma.user.findUnique({
+              where: { email: credentials.email },
+            })
+
+            if (!user || !user.password) {
+              throw new Error('Invalid email or password')
+            }
+
+            const isPasswordValid = await bcrypt.compare(
+              credentials.password,
+              user.password
+            )
+
+            if (!isPasswordValid) {
+              throw new Error('Invalid email or password')
+            }
+
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              image: user.image,
+              role: user.role,
+            }
+          } catch (error) {
+            console.error('Authentication error:', error)
+            throw new Error('Authentication failed')
+          }
         },
-      },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email and password are required')
-        }
-
-        try {
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email },
-          })
-
-          if (!user || !user.password) {
-            throw new Error('Invalid email or password')
-          }
-
-          const isPasswordValid = await bcrypt.compare(
-            credentials.password,
-            user.password
-          )
-
-          if (!isPasswordValid) {
-            throw new Error('Invalid email or password')
-          }
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            image: user.image,
-            role: user.role,
-          }
-        } catch (error) {
-          console.error('Authentication error:', error)
-          throw new Error('Authentication failed')
-        }
-      },
-    })
-  ] : []),
+      })
+    ] : [])
+  ],
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days

@@ -8,6 +8,10 @@ import { withRBAC, PERMISSIONS } from '@/lib/middleware/rbac-middleware'
 import { supabaseServer } from '@/lib/supabase/server'
 import RBACService from '@/lib/rbac'
 
+// Force dynamic rendering for RBAC routes
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET portfolios with real-time Supabase integration
 const getPortfolios = async (request: NextRequest, context: { user: any }) => {
   try {

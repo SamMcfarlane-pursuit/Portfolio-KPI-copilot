@@ -6,6 +6,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { healthMonitor } from '@/lib/monitoring/health-monitor'
 
+// Force dynamic rendering for health checks
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET comprehensive health check
 export async function GET(request: NextRequest) {
   const startTime = Date.now()

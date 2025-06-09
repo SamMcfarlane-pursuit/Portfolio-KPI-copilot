@@ -226,6 +226,25 @@ export default function SignInPage() {
               </Alert>
             )}
 
+            {/* No Providers Configured */}
+            {oauthProviders.length === 0 && !hasCredentials && (
+              <div className="text-center py-8">
+                <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">
+                  Authentication Not Configured
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  No authentication providers are currently configured.
+                  You can still explore the application in demo mode.
+                </p>
+                <Link href="/dashboard">
+                  <Button variant="outline" className="w-full">
+                    Continue to Demo
+                  </Button>
+                </Link>
+              </div>
+            )}
+
             {/* OAuth Providers */}
             {oauthProviders.length > 0 && (
               <div className="space-y-3">

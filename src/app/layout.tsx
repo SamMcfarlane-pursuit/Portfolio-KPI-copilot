@@ -13,8 +13,7 @@ export const metadata: Metadata = {
   keywords: ['portfolio', 'KPI', 'AI', 'analytics', 'operations', 'enterprise', 'dashboard'],
   authors: [{ name: 'Portfolio KPI Copilot Team' }],
   robots: 'noindex, nofollow', // Private enterprise app
-  viewport: 'width=device-width, initial-scale=1',
-  themeColor: '#3b82f6',
+  metadataBase: new URL(process.env.NEXTAUTH_URL || 'https://portfolio-kpi-copilot.vercel.app'),
   icons: {
     icon: '/favicon.ico',
     apple: '/apple-touch-icon.png',
