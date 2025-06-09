@@ -245,7 +245,7 @@ export class DocumentProcessor {
         const numericData = structuredData.numericColumns[header]
         
         if (numericData && numericData.length > 0) {
-          const avgValue = numericData.reduce((a, b) => a + b, 0) / numericData.length
+          const avgValue = numericData.reduce((a: number, b: number) => a + b, 0) / numericData.length
           
           let category: KPISuggestion['category'] = 'operational'
           let unit = 'count'

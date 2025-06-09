@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       },
       analysis: {
         totalKPIs: processedDocument.kpiSuggestions.length,
-        categories: [...new Set(processedDocument.kpiSuggestions.map(kpi => kpi.category))],
+        categories: Array.from(new Set(processedDocument.kpiSuggestions.map(kpi => kpi.category))),
         highConfidenceKPIs: processedDocument.kpiSuggestions.filter(kpi => kpi.confidence > 0.8).length,
         textLength: processedDocument.extractedText.length,
         wordCount: processedDocument.metadata.wordCount
