@@ -51,19 +51,24 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    // Log the registration event
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'USER_REGISTRATION',
-        resourceType: 'AUTH',
-        resourceId: user.id,
-        metadata: JSON.stringify({
-          method: 'email_password',
-          email: user.email,
-        }),
-      },
-    })
+    // Log the registration event (optional - graceful failure)
+    try {
+      await prisma.auditLog.create({
+        data: {
+          userId: user.id,
+          action: 'USER_REGISTRATION',
+          resourceType: 'AUTH',
+          resourceId: user.id,
+          metadata: JSON.stringify({
+            method: 'email_password',
+            email: user.email,
+          }),
+        },
+      })
+    } catch (auditError) {
+      console.warn('Failed to create audit log:', auditError)
+      // Continue without failing the registration
+    }
 
     return NextResponse.json(
       { 
@@ -88,8 +93,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Handle specific database errors
+    if (error instanceof Error) {
+      if (error.message.includes('UNIQUE constraint failed')) {
+        return NextResponse.json(
+          { error: 'User with this email already exists' },
+          { status: 400 }
+        )
+      }
+
+      if (error.message.includes('no such table')) {
+        return NextResponse.json(
+          { error: 'Database not initialized. Please contact support.' },
+          { status: 503 }
+        )
+      }
+
+      // Log the actual error for debugging
+      console.error('Detailed error:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      })
+    }
+
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error. Please try again later.' },
       { status: 500 }
     )
   }
