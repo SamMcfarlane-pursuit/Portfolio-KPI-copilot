@@ -300,7 +300,7 @@ export async function fetchVerifiedData(companyId: string): Promise<any> {
       confidence: company.financials.revenue[0]?.confidence || 0.85
     },
     economicContext: ECONOMIC_INDICATORS,
-    industryBenchmarks: INDUSTRY_BENCHMARKS[company.sector.toLowerCase().replace(/\s+/g, '')]
+    industryBenchmarks: INDUSTRY_BENCHMARKS[company.sector.toLowerCase().replace(/\s+/g, '') as keyof typeof INDUSTRY_BENCHMARKS]
   }
 }
 

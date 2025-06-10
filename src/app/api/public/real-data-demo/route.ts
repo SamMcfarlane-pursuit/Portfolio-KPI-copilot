@@ -136,7 +136,7 @@ export async function GET(request: NextRequest) {
     
     // Include detailed proof if requested
     if (proof) {
-      response.proof = {
+      (response as any).proof = {
         methodology: {
           description: "All financial data is sourced from verified public sources including SEC filings, company press releases, and reputable financial data providers.",
           sources: [

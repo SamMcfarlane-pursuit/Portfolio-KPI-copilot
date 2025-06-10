@@ -27,6 +27,7 @@ interface DataSource {
   reliability: string
   verified: boolean
   lastChecked: string
+  updateFrequency?: string
 }
 
 interface Company {
@@ -104,7 +105,7 @@ export default function RealDataVerification() {
       if (result.success) {
         setSelectedCompany(companyId)
         // Update data with detailed company info
-        setData(prev => ({ ...prev, selectedCompanyDetails: result }))
+        setData((prev: any) => ({ ...prev, selectedCompanyDetails: result }))
       }
     } catch (err) {
       console.error('Failed to fetch company details:', err)

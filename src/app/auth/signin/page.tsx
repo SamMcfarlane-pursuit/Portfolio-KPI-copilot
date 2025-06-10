@@ -112,6 +112,21 @@ export default function SignInPage() {
         })
         // If we reach here, something went wrong
         setError('OAuth sign-in was cancelled or failed.')
+      } else if (providerId === 'demo') {
+        // Handle demo provider with credentials
+        const result = await signIn('demo', {
+          email: 'demo@portfolio-kpi.com',
+          password: 'demo123',
+          callbackUrl,
+          redirect: false
+        })
+
+        if (result?.error) {
+          setError('Demo authentication failed. Please try again.')
+        } else if (result?.url) {
+          setSuccess('Demo sign-in successful! Redirecting...')
+          setTimeout(() => router.push(result.url || '/dashboard'), 1000)
+        }
       } else {
         // For other providers, use redirect: false
         const result = await signIn(providerId, {
@@ -177,6 +192,8 @@ export default function SignInPage() {
         return <Linkedin className="w-5 h-5" />
       case 'okta':
         return <Shield className="w-5 h-5" />
+      case 'demo':
+        return <Eye className="w-5 h-5" />
       default:
         return <Mail className="w-5 h-5" />
     }
@@ -194,6 +211,8 @@ export default function SignInPage() {
         return 'hover:bg-blue-50 border-blue-200 text-blue-700'
       case 'okta':
         return 'hover:bg-indigo-50 border-indigo-200 text-indigo-700'
+      case 'demo':
+        return 'hover:bg-green-50 border-green-200 text-green-700'
       default:
         return 'hover:bg-gray-50 border-gray-200 text-gray-700'
     }
@@ -203,7 +222,10 @@ export default function SignInPage() {
     provider => provider.type === 'oauth' && provider.id !== 'credentials'
   )
 
-  const hasCredentials = providers.credentials
+  const demoProvider = providers.demo
+  const credentialsProvider = providers.credentials
+
+  const hasCredentials = credentialsProvider
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
@@ -214,7 +236,7 @@ export default function SignInPage() {
             Welcome to Portfolio KPI Copilot
           </h1>
           <p className="text-gray-600">
-            Sign in to access your portfolio analytics
+            Professional Portfolio KPI Management for Financial Analysts, Real Estate Professionals, and Investment Managers
           </p>
         </div>
 
@@ -242,15 +264,48 @@ export default function SignInPage() {
               </Alert>
             )}
 
+            {/* Demo Provider */}
+            {demoProvider && (
+              <div className="space-y-3">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h3 className="text-sm font-semibold text-green-800 mb-2">
+                    🎯 Demo Access for Portfolio Professionals
+                  </h3>
+                  <p className="text-xs text-green-700 mb-3">
+                    Try the full Portfolio KPI Copilot experience with sample financial data
+                  </p>
+                  <Button
+                    variant="outline"
+                    className="w-full h-12 hover:bg-green-50 border-green-200 text-green-700"
+                    onClick={() => handleOAuthSignIn('demo')}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    ) : (
+                      <>
+                        <Eye className="w-5 h-5 mr-2" />
+                        Demo Portfolio Manager Access
+                      </>
+                    )}
+                  </Button>
+                  <div className="text-xs text-green-600 mt-2 space-y-1">
+                    <div><strong>Email:</strong> demo@portfolio-kpi.com</div>
+                    <div><strong>Password:</strong> demo123</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* No Providers Configured */}
-            {oauthProviders.length === 0 && !hasCredentials && (
+            {oauthProviders.length === 0 && !credentialsProvider && !demoProvider && (
               <div className="text-center py-8">
                 <AlertCircle className="h-12 w-12 text-amber-500 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">
                   Authentication Setup Required
                 </h3>
                 <p className="text-gray-600 mb-4">
-                  Google OAuth is configured but needs to be published in Google Console.
+                  OAuth providers need to be configured for production use.
                   You can explore the application in demo mode or set up authentication.
                 </p>
                 <div className="space-y-3">
@@ -269,6 +324,20 @@ export default function SignInPage() {
                       🚀 Continue to Demo
                     </Button>
                   </Link>
+                </div>
+              </div>
+            )}
+
+            {/* Separator between Demo and OAuth */}
+            {demoProvider && oauthProviders.length > 0 && (
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">
+                    Or use OAuth providers
+                  </span>
                 </div>
               </div>
             )}

@@ -18,8 +18,33 @@ const hasEnvVar = (name: string): boolean => {
 const createProviders = () => {
   const providers: any[] = []
 
-  // Google OAuth Provider (only if credentials are available)
-  if (hasEnvVar('GOOGLE_CLIENT_ID') && hasEnvVar('GOOGLE_CLIENT_SECRET')) {
+  // Demo mode: Always available for immediate access (no database required)
+  providers.push({
+    id: 'demo',
+    name: 'Demo Account',
+    type: 'credentials' as const,
+    credentials: {
+      email: { label: 'Email', type: 'email', placeholder: 'demo@portfolio-kpi.com' },
+      password: { label: 'Password', type: 'password', placeholder: 'demo123' }
+    },
+    async authorize(credentials: any) {
+      // Demo credentials for immediate access - no database dependency
+      if (credentials?.email === 'demo@portfolio-kpi.com' && credentials?.password === 'demo123') {
+        return {
+          id: 'demo-user-' + Date.now(), // Unique ID for each session
+          email: 'demo@portfolio-kpi.com',
+          name: 'Demo Portfolio Manager',
+          role: 'ADMIN',
+          image: null
+        }
+      }
+      return null
+    }
+  })
+
+  // Google OAuth Provider - DISABLED IN PRODUCTION UNTIL PROPERLY CONFIGURED
+  // Only enable if explicitly configured and not in production without proper setup
+  if (hasEnvVar('GOOGLE_CLIENT_ID') && hasEnvVar('GOOGLE_CLIENT_SECRET') && process.env.ENABLE_GOOGLE_OAUTH === 'true') {
     providers.push(
       GoogleProvider({
         clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -36,23 +61,24 @@ const createProviders = () => {
     )
   }
 
-  // GitHub OAuth Provider (only if credentials are available)
-  if (hasEnvVar('GITHUB_ID') && hasEnvVar('GITHUB_SECRET')) {
-    providers.push(
-      GitHubProvider({
-        clientId: process.env.GITHUB_ID!,
-        clientSecret: process.env.GITHUB_SECRET!,
-        authorization: {
-          params: {
-            scope: 'read:user user:email',
-          },
-        },
-      })
-    )
-  }
+  // GitHub OAuth Provider - DISABLED FOR NOW
+  // Temporarily disabled to fix authentication errors
+  // if (hasEnvVar('GITHUB_ID') && hasEnvVar('GITHUB_SECRET')) {
+  //   providers.push(
+  //     GitHubProvider({
+  //       clientId: process.env.GITHUB_ID!,
+  //       clientSecret: process.env.GITHUB_SECRET!,
+  //       authorization: {
+  //         params: {
+  //           scope: 'read:user user:email',
+  //         },
+  //       },
+  //     })
+  //   )
+  // }
 
-  // Microsoft/Azure AD Provider (only if credentials are available)
-  if (hasEnvVar('AZURE_AD_CLIENT_ID') && hasEnvVar('AZURE_AD_CLIENT_SECRET')) {
+  // Microsoft/Azure AD Provider - DISABLED UNTIL PROPERLY CONFIGURED
+  if (hasEnvVar('AZURE_AD_CLIENT_ID') && hasEnvVar('AZURE_AD_CLIENT_SECRET') && process.env.ENABLE_AZURE_OAUTH === 'true') {
     providers.push(
       MicrosoftProvider({
         clientId: process.env.AZURE_AD_CLIENT_ID!,
@@ -67,8 +93,8 @@ const createProviders = () => {
     )
   }
 
-  // LinkedIn Provider (only if credentials are available)
-  if (hasEnvVar('LINKEDIN_CLIENT_ID') && hasEnvVar('LINKEDIN_CLIENT_SECRET')) {
+  // LinkedIn Provider - DISABLED UNTIL PROPERLY CONFIGURED
+  if (hasEnvVar('LINKEDIN_CLIENT_ID') && hasEnvVar('LINKEDIN_CLIENT_SECRET') && process.env.ENABLE_LINKEDIN_OAUTH === 'true') {
     providers.push(
       LinkedInProvider({
         clientId: process.env.LINKEDIN_CLIENT_ID!,
@@ -82,8 +108,8 @@ const createProviders = () => {
     )
   }
 
-  // Okta provider for enterprise SSO (only if credentials are available)
-  if (hasEnvVar('OKTA_CLIENT_ID') && hasEnvVar('OKTA_CLIENT_SECRET') && hasEnvVar('OKTA_DOMAIN')) {
+  // Okta provider for enterprise SSO - DISABLED UNTIL PROPERLY CONFIGURED
+  if (hasEnvVar('OKTA_CLIENT_ID') && hasEnvVar('OKTA_CLIENT_SECRET') && hasEnvVar('OKTA_DOMAIN') && process.env.ENABLE_OKTA_OAUTH === 'true') {
     providers.push({
       id: 'okta',
       name: 'Okta',
@@ -189,6 +215,11 @@ export const authOptions: NextAuthOptions = {
     },
     async signIn({ user, account, profile }) {
       try {
+        // Skip database operations for demo users
+        if (user.email === 'demo@portfolio-kpi.com') {
+          return true
+        }
+
         // Only interact with database if it's available and working
         if (hasEnvVar('DATABASE_URL')) {
           try {
@@ -231,6 +262,11 @@ export const authOptions: NextAuthOptions = {
   },
   events: {
     async signIn({ user, account, profile, isNewUser }) {
+      // Skip logging for demo users
+      if (user.email === 'demo@portfolio-kpi.com') {
+        return
+      }
+
       // Log sign-in event for audit trail (only if database is available and working)
       if (user.id && hasEnvVar('DATABASE_URL')) {
         try {
@@ -255,6 +291,11 @@ export const authOptions: NextAuthOptions = {
       }
     },
     async signOut({ session, token }) {
+      // Skip logging for demo users
+      if (session?.user?.email === 'demo@portfolio-kpi.com') {
+        return
+      }
+
       // Log sign-out event (only if database is available and working)
       if (token?.userId && hasEnvVar('DATABASE_URL')) {
         try {
