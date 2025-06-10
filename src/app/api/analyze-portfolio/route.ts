@@ -180,7 +180,8 @@ function generateInsights(companies: any[]) {
   
   insights.push(`Portfolio contains ${companies.length} companies with average valuation of $${avgValuation.toLocaleString()}`);
   
-  const sectors = [...new Set(companies.map(c => c.sector).filter(Boolean))];
+  const sectorSet = new Set(companies.map(c => c.sector).filter(Boolean));
+  const sectors = Array.from(sectorSet);
   if (sectors.length > 1) {
     insights.push(`Well-diversified portfolio across ${sectors.length} sectors: ${sectors.join(', ')}`);
   }
@@ -204,7 +205,8 @@ function generateRecommendations(companies: any[]) {
     });
   }
 
-  const sectors = [...new Set(companies.map(c => c.sector).filter(Boolean))];
+  const sectorSet = new Set(companies.map(c => c.sector).filter(Boolean));
+  const sectors = Array.from(sectorSet);
   if (sectors.length < 3) {
     recommendations.push({
       type: "diversification",
