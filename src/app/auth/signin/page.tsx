@@ -89,6 +89,9 @@ export default function SignInPage() {
         case 'CredentialsSignup':
           setError('Account creation failed. Please try again.')
           break
+        case 'AccessDenied':
+          setError('Access denied. The Google OAuth app is in testing mode. You need to be added as a test user in Google Console, or the app needs to be published.')
+          break
         default:
           setError('An authentication error occurred.')
       }
@@ -98,20 +101,33 @@ export default function SignInPage() {
   const handleOAuthSignIn = async (providerId: string) => {
     setLoading(true)
     setError('')
-    
-    try {
-      const result = await signIn(providerId, {
-        callbackUrl,
-        redirect: false
-      })
 
-      if (result?.error) {
-        setError('Authentication failed. Please try again.')
-      } else if (result?.url) {
-        router.push(result.url)
+    try {
+      // For OAuth providers, we need to use redirect: true for proper flow
+      if (providerId === 'google' || providerId === 'github' || providerId === 'azure-ad' || providerId === 'linkedin' || providerId === 'okta') {
+        // This will redirect to the OAuth provider
+        await signIn(providerId, {
+          callbackUrl,
+          redirect: true
+        })
+        // If we reach here, something went wrong
+        setError('OAuth sign-in was cancelled or failed.')
+      } else {
+        // For other providers, use redirect: false
+        const result = await signIn(providerId, {
+          callbackUrl,
+          redirect: false
+        })
+
+        if (result?.error) {
+          setError('Authentication failed. Please try again.')
+        } else if (result?.url) {
+          router.push(result.url)
+        }
       }
     } catch (error) {
-      setError('An unexpected error occurred.')
+      console.error('OAuth sign-in error:', error)
+      setError('An unexpected error occurred during sign-in.')
     } finally {
       setLoading(false)
     }
