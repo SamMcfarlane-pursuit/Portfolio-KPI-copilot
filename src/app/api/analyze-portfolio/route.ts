@@ -2,11 +2,58 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { supabaseServer } from '@/lib/supabase/server';
+import { enhancedAIOrchestrator } from '@/lib/ai/enhanced-orchestrator';
+import { redisCache } from '@/lib/cache/redis-cache';
+import { securityMiddleware } from '@/lib/middleware/security-middleware';
+import { rateLimiter, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rate-limiter';
+import { dbOptimizer } from '@/lib/prisma';
+
+// Force dynamic rendering for real-time data
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+  const requestId = `analyze-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
   try {
+    // Apply security middleware
+    const securityCheck = await securityMiddleware.processRequest(request);
+    if (securityCheck) return securityCheck;
+
+    // Apply rate limiting
+    const rateLimitResult = await rateLimiter.checkLimit(request, RATE_LIMIT_CONFIGS.API_MODERATE);
+    if (!rateLimitResult.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
+        {
+          status: 429,
+          headers: {
+            'Retry-After': rateLimitResult.retryAfter?.toString() || '60',
+            'X-RateLimit-Limit': rateLimitResult.limit.toString(),
+            'X-RateLimit-Remaining': rateLimitResult.remaining.toString()
+          }
+        }
+      );
+    }
+
     const session = await getServerSession(authOptions);
-    
+    const userId = session?.user?.id;
+
+    // Generate cache key
+    const cacheKey = `portfolio-analysis:${userId || 'demo'}:${new Date().toDateString()}`;
+
+    // Try to get cached result first
+    const cachedResult = await redisCache.get(cacheKey);
+    if (cachedResult) {
+      return NextResponse.json({
+        ...cachedResult,
+        cached: true,
+        requestId,
+        responseTime: Date.now() - startTime
+      });
+    }
+
     // Allow demo mode - return mock data if no session
     if (!session) {
       return NextResponse.json({
@@ -58,11 +105,14 @@ export async function GET(request: NextRequest) {
               priority: "medium"
             }
           ]
-        }
+        },
+        cached: false,
+        requestId,
+        responseTime: Date.now() - startTime
       });
     }
 
-    // For authenticated users, fetch real data
+    // For authenticated users, fetch real data with optimization
     const client = supabaseServer.getClient();
     if (!client) {
       return NextResponse.json({
@@ -71,10 +121,20 @@ export async function GET(request: NextRequest) {
       }, { status: 500 });
     }
 
-    const { data: companies, error } = await client
-      .from('companies')
-      .select('*')
-      .eq('user_id', session.user.id);
+    // Use database optimizer for better performance
+    const dbResult = await dbOptimizer.executeQuery(
+      async () => {
+        const response = await client
+          .from('companies')
+          .select('*')
+          .eq('user_id', session.user.id);
+        return response;
+      },
+      `companies:${session.user.id}`,
+      300000 // 5 minutes cache
+    );
+
+    const { data: companies, error } = dbResult as any;
 
     if (error) {
       console.error('Supabase error:', error);
@@ -89,15 +149,23 @@ export async function GET(request: NextRequest) {
     const insights = generateInsights(companies || []);
     const recommendations = generateRecommendations(companies || []);
 
-    return NextResponse.json({
+    const result = {
       success: true,
       data: {
         totalPortfolios: companies?.length || 0,
         sectorBreakdown,
         insights,
         recommendations
-      }
-    });
+      },
+      cached: false,
+      requestId,
+      responseTime: Date.now() - startTime
+    };
+
+    // Cache the result for future requests
+    await redisCache.set(cacheKey, result, 1800); // 30 minutes
+
+    return NextResponse.json(result);
 
   } catch (error) {
     console.error('Portfolio analysis error:', error);
@@ -219,7 +287,53 @@ function generateRecommendations(companies: any[]) {
 }
 
 async function generateAIInsights(query: string, analysisType: string, userId?: string) {
-  // Simplified AI insights generation
+  try {
+    // Use enhanced AI orchestrator for better insights
+    const aiRequest = {
+      prompt: `Analyze portfolio performance based on: ${query}. Analysis type: ${analysisType}. Provide specific insights and actionable recommendations.`,
+      context: { analysisType, userId },
+      userId,
+      priority: 'medium' as const,
+      maxTokens: 500,
+      temperature: 0.7,
+      cacheKey: `ai-insights:${analysisType}:${query.substring(0, 50)}`,
+      cacheTTL: 1800 // 30 minutes
+    };
+
+    const aiResponse = await enhancedAIOrchestrator.processRequest(aiRequest);
+
+    if (aiResponse.content) {
+      // Parse AI response to extract insights and recommendations
+      const content = aiResponse.content;
+      const insights = content.split('\n').filter(line => line.trim().length > 0).slice(0, 4);
+
+      return {
+        insights: insights.length > 0 ? insights : [
+          "Portfolio analysis completed with AI assistance",
+          "Market trends indicate balanced risk-return profile",
+          "Consider diversification opportunities in emerging sectors"
+        ],
+        recommendations: [
+          {
+            type: "ai_optimization",
+            description: "AI-powered analysis suggests reviewing allocation strategy",
+            priority: "medium",
+            confidence: aiResponse.confidence
+          }
+        ],
+        aiMetadata: {
+          model: aiResponse.model,
+          provider: aiResponse.provider,
+          confidence: aiResponse.confidence,
+          processingTime: aiResponse.processingTime
+        }
+      };
+    }
+  } catch (error) {
+    console.error('AI insights generation error:', error);
+  }
+
+  // Fallback to simplified insights
   const baseInsights = [
     "Portfolio shows balanced risk-return profile across sectors",
     "Technology investments demonstrate strong growth potential",
