@@ -165,8 +165,10 @@ export default withAuth(
             req.nextUrl.pathname.startsWith('/api/docs') ||
             req.nextUrl.pathname.startsWith('/api/system/') ||
             req.nextUrl.pathname.startsWith('/api/test/') ||
+            req.nextUrl.pathname.startsWith('/api/public/') ||
             req.nextUrl.pathname === '/dashboard' ||
             req.nextUrl.pathname === '/data' ||
+            req.nextUrl.pathname === '/test-real-data' ||
             req.nextUrl.pathname.startsWith('/portfolio') ||
             req.nextUrl.pathname.startsWith('/analytics') ||
             req.nextUrl.pathname.startsWith('/ai-assistant')) {
