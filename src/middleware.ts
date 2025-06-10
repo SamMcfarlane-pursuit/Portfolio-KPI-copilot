@@ -168,6 +168,7 @@ export default withAuth(
             req.nextUrl.pathname.startsWith('/api/public/') ||
             req.nextUrl.pathname === '/dashboard' ||
             req.nextUrl.pathname === '/data' ||
+            req.nextUrl.pathname === '/demo' ||
             req.nextUrl.pathname === '/test-real-data' ||
             req.nextUrl.pathname.startsWith('/portfolio') ||
             req.nextUrl.pathname.startsWith('/analytics') ||

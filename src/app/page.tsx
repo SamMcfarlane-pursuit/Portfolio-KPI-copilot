@@ -79,6 +79,11 @@ function LandingPage() {
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
+                <Link href="/demo">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto border-2">
+                    🎯 View Demo
+                  </Button>
+                </Link>
                 <Link href="#features">
                   <Button variant="outline" size="lg" className="w-full sm:w-auto">
                     Learn More
@@ -87,16 +92,21 @@ function LandingPage() {
               </>
             ) : (
               <>
-                <Link href="/dashboard">
+                <Link href="/demo">
                   <Button size="lg" className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700">
-                    🚀 Try Demo Now
+                    🎯 Interactive Demo
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </Link>
-                <Link href="/auth/signin">
+                <Link href="/dashboard">
                   <Button variant="outline" size="lg" className="w-full sm:w-auto border-2">
-                    Set Up Authentication
+                    🚀 Try Dashboard
                     <ExternalLink className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link href="/auth/signin">
+                  <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                    Set Up Authentication
                   </Button>
                 </Link>
               </>
@@ -104,10 +114,10 @@ function LandingPage() {
           </div>
 
           {!authConfigured && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg max-w-2xl mx-auto">
+            <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-lg max-w-2xl mx-auto">
               <p className="text-blue-800 text-sm">
-                <strong>🎯 Demo Mode Active:</strong> Explore the full interface with sample data instantly!
-                No signup required - just click "Try Demo Now" above.
+                <strong>🎯 Interactive Demo Available:</strong> Experience real financial data integration with verified sources!
+                No signup required - explore portfolio analytics with actual market data.
               </p>
             </div>
           )}
