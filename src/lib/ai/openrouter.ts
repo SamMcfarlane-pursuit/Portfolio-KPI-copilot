@@ -82,6 +82,12 @@ export class OpenRouterService {
       maxTokens?: number
       tools?: any[]
       systemPrompt?: string
+      stream?: boolean
+      onStream?: (chunk: string) => void
+      topP?: number
+      frequencyPenalty?: number
+      presencePenalty?: number
+      stop?: string[]
     } = {}
   ): Promise<string> {
     if (!this.isConfigured) {
@@ -93,7 +99,13 @@ export class OpenRouterService {
       temperature = 0.1,
       maxTokens = 4000,
       tools,
-      systemPrompt
+      systemPrompt,
+      stream = false,
+      onStream,
+      topP = 1,
+      frequencyPenalty = 0,
+      presencePenalty = 0,
+      stop
     } = options
 
     try {
@@ -115,14 +127,22 @@ export class OpenRouterService {
           messages: chatMessages,
           temperature,
           max_tokens: maxTokens,
+          top_p: topP,
+          frequency_penalty: frequencyPenalty,
+          presence_penalty: presencePenalty,
+          stop,
           tools,
-          stream: false
+          stream
         })
       })
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(`OpenRouter API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`)
+      }
+
+      if (stream && onStream) {
+        return await this.handleStreamResponse(response, onStream)
       }
 
       const data = await response.json()
@@ -291,6 +311,191 @@ export class OpenRouterService {
       console.error('Benchmark analysis error:', error)
       throw new Error(`Failed to perform benchmark analysis: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
+  }
+
+  private async handleStreamResponse(response: Response, onStream: (chunk: string) => void): Promise<string> {
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('No response body for streaming')
+    }
+
+    const decoder = new TextDecoder()
+    let fullContent = ''
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        const chunk = decoder.decode(value, { stream: true })
+        const lines = chunk.split('\n').filter(line => line.trim())
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6)
+            if (data === '[DONE]') continue
+
+            try {
+              const parsed = JSON.parse(data)
+              const content = parsed.choices?.[0]?.delta?.content
+              if (content) {
+                fullContent += content
+                onStream(content)
+              }
+            } catch (error) {
+              console.warn('Failed to parse streaming chunk:', error)
+            }
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock()
+    }
+
+    return fullContent
+  }
+
+  async processNaturalLanguageQuery(
+    query: string,
+    context: {
+      portfolios?: any[]
+      kpis?: any[]
+      organizationId?: string
+      userId?: string
+    } = {}
+  ): Promise<{
+    intent: string
+    entities: any[]
+    filters: any
+    response: string
+    confidence: number
+  }> {
+    const systemPrompt = `You are an expert financial data analyst specializing in natural language processing for KPI queries.
+    Parse user queries and extract:
+    1. Intent (search, analyze, compare, forecast, benchmark)
+    2. Entities (company names, KPI types, time periods, values)
+    3. Filters (conditions, thresholds, date ranges)
+    4. Generate appropriate response or data query
+
+    Available KPI categories: financial, operational, growth, efficiency, risk
+    Available time periods: daily, weekly, monthly, quarterly, yearly
+    Available comparison operators: >, <, >=, <=, =, between`
+
+    const analysisPrompt = `
+    Parse this natural language query: "${query}"
+
+    Context:
+    - Available portfolios: ${context.portfolios?.length || 0}
+    - Available KPIs: ${context.kpis?.length || 0}
+    - Organization: ${context.organizationId || 'N/A'}
+
+    Extract and structure the query intent, entities, and filters.
+    Provide a natural language response explaining what data will be retrieved.
+    `
+
+    try {
+      const response = await this.chat(
+        [{ role: 'user', content: analysisPrompt }],
+        {
+          model: 'anthropic/claude-3.5-sonnet',
+          temperature: 0.1,
+          maxTokens: 2000,
+          systemPrompt
+        }
+      )
+
+      return this.parseNLQueryResponse(response, query)
+
+    } catch (error) {
+      console.error('Natural language query processing error:', error)
+      throw new Error(`Failed to process query: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    }
+  }
+
+  private parseNLQueryResponse(response: string, originalQuery: string): any {
+    // Parse the AI response to extract structured data
+    // In production, this would use more sophisticated NLP parsing
+
+    const intent = this.extractIntent(response)
+    const entities = this.extractEntities(response)
+    const filters = this.extractFilters(response)
+    const confidence = this.extractConfidence(response)
+
+    return {
+      intent,
+      entities,
+      filters,
+      response,
+      confidence,
+      originalQuery
+    }
+  }
+
+  private extractIntent(text: string): string {
+    const intentPatterns = {
+      search: /search|find|show|get|list/i,
+      analyze: /analyze|analysis|examine|review/i,
+      compare: /compare|versus|vs|against/i,
+      forecast: /forecast|predict|project|future/i,
+      benchmark: /benchmark|compare to industry|industry average/i
+    }
+
+    for (const [intent, pattern] of Object.entries(intentPatterns)) {
+      if (pattern.test(text)) {
+        return intent
+      }
+    }
+
+    return 'search' // default
+  }
+
+  private extractEntities(text: string): any[] {
+    // Extract entities like company names, KPI types, values, dates
+    const entities: any[] = []
+
+    // Extract KPI types
+    const kpiTypes = ['ROE', 'ROI', 'revenue', 'profit', 'margin', 'growth', 'EBITDA', 'debt', 'equity']
+    for (const kpi of kpiTypes) {
+      if (new RegExp(kpi, 'i').test(text)) {
+        entities.push({ type: 'kpi', value: kpi })
+      }
+    }
+
+    // Extract numerical values
+    const numberMatches = text.match(/(\d+(?:\.\d+)?)\s*%?/g)
+    if (numberMatches) {
+      numberMatches.forEach(match => {
+        entities.push({ type: 'value', value: parseFloat(match) })
+      })
+    }
+
+    return entities
+  }
+
+  private extractFilters(text: string): any {
+    const filters: any = {}
+
+    // Extract comparison operators and values
+    const comparisonPatterns = [
+      { pattern: />\s*(\d+(?:\.\d+)?)/g, operator: '>' },
+      { pattern: /<\s*(\d+(?:\.\d+)?)/g, operator: '<' },
+      { pattern: />=\s*(\d+(?:\.\d+)?)/g, operator: '>=' },
+      { pattern: /<=\s*(\d+(?:\.\d+)?)/g, operator: '<=' },
+      { pattern: /=\s*(\d+(?:\.\d+)?)/g, operator: '=' }
+    ]
+
+    for (const { pattern, operator } of comparisonPatterns) {
+      const matches = Array.from(text.matchAll(pattern))
+      if (matches.length > 0) {
+        filters.comparison = {
+          operator,
+          value: parseFloat(matches[0][1])
+        }
+        break
+      }
+    }
+
+    return filters
   }
 
   // Helper methods
