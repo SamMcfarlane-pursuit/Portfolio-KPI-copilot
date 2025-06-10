@@ -11,20 +11,22 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  Upload, 
-  FileText, 
-  Database, 
-  BarChart3, 
-  TrendingUp, 
+import {
+  Upload,
+  FileText,
+  Database,
+  BarChart3,
+  TrendingUp,
   AlertCircle,
   CheckCircle,
   Clock,
   Download,
   Trash2,
-  Eye
+  Eye,
+  Shield
 } from 'lucide-react'
 import { useDropzone } from 'react-dropzone'
+import RealDataVerification from '@/components/data/RealDataVerification'
 
 interface UploadedFile {
   id: string
@@ -165,7 +167,7 @@ export default function DataManagementPage() {
         <div>
           <h1 className="text-3xl font-bold">Data Management</h1>
           <p className="text-muted-foreground">
-            Upload and manage portfolio documents, KPI data, and financial reports
+            Real data integration, document upload, and verified financial sources
           </p>
         </div>
         <Badge variant="outline" className="text-sm">
@@ -174,12 +176,17 @@ export default function DataManagementPage() {
         </Badge>
       </div>
 
-      <Tabs defaultValue="upload" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="real-data" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="real-data">Real Data Sources</TabsTrigger>
           <TabsTrigger value="upload">Upload Documents</TabsTrigger>
           <TabsTrigger value="files">Manage Files</TabsTrigger>
           <TabsTrigger value="analytics">Data Analytics</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="real-data" className="space-y-6">
+          <RealDataVerification />
+        </TabsContent>
 
         <TabsContent value="upload" className="space-y-6">
           <Card>
