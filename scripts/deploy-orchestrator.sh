@@ -50,6 +50,15 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
+# Check if Vercel CLI is available (local or global)
+if ! command -v vercel &> /dev/null && ! npx vercel --version &> /dev/null; then
+    print_error "Vercel CLI not found. Installing locally..."
+    npm install vercel --save-dev
+fi
+
+# Use npx to run vercel commands
+VERCEL_CMD="npx vercel"
+
 # Function to display phase information
 show_phase_info() {
     echo ""
@@ -111,7 +120,7 @@ check_current_status() {
     print_status "Checking current deployment status..."
     
     # Try to get current phase from Vercel
-    CURRENT_PHASE=$(vercel env ls production 2>/dev/null | grep DEPLOYMENT_PHASE | awk '{print $2}' || echo "0")
+    CURRENT_PHASE=$($VERCEL_CMD env ls production 2>/dev/null | grep DEPLOYMENT_PHASE | awk '{print $2}' || echo "0")
     
     if [ "$CURRENT_PHASE" = "0" ] || [ -z "$CURRENT_PHASE" ]; then
         print_warning "No current deployment detected or Phase 0 (initial setup)"

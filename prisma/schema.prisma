@@ -63,6 +63,19 @@ model User {
   alerts           Alert[]
   auditLogs        AuditLog[]
 
+  // CRUD tracking relations
+  createdPortfolios Portfolio[] @relation("CreatedBy")
+  updatedPortfolios Portfolio[] @relation("UpdatedBy")
+  deletedPortfolios Portfolio[] @relation("DeletedBy")
+
+  createdCompanies Company[] @relation("CreatedBy")
+  updatedCompanies Company[] @relation("UpdatedBy")
+  deletedCompanies Company[] @relation("DeletedBy")
+
+  createdKPIs KPI[] @relation("CreatedBy")
+  updatedKPIs KPI[] @relation("UpdatedBy")
+  deletedKPIs KPI[] @relation("DeletedBy")
+
   @@map("users")
 }
 
@@ -133,19 +146,82 @@ model Fund {
 model Portfolio {
   id          String   @id @default(cuid())
   name        String
+  description String?
   sector      String?
   geography   String?
   status      String   @default("ACTIVE")
   investment  Float?
   ownership   Float?
+  totalValue  Float?
+  currency    String   @default("USD")
+  isActive    Boolean  @default(true)
   fundId      String
+
+  // CRUD tracking
+  createdBy   String?
+  updatedBy   String?
+  deletedBy   String?
+  deletedAt   DateTime?
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   fund Fund  @relation(fields: [fundId], references: [id], onDelete: Cascade)
   kpis KPI[]
+  portfolioCompanies PortfolioCompany[]
+
+  // CRUD relations
+  creator User? @relation("CreatedBy", fields: [createdBy], references: [id])
+  updater User? @relation("UpdatedBy", fields: [updatedBy], references: [id])
+  deleter User? @relation("DeletedBy", fields: [deletedBy], references: [id])
 
   @@map("portfolios")
+}
+
+// Company Management
+model Company {
+  id          String   @id @default(cuid())
+  name        String
+  symbol      String   @unique
+  sector      String?
+  industry    String?
+  marketCap   Float?
+  description String?
+  isActive    Boolean  @default(true)
+
+  // CRUD tracking
+  createdBy   String?
+  updatedBy   String?
+  deletedBy   String?
+  deletedAt   DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  kpis        KPI[]
+  portfolioCompanies PortfolioCompany[]
+
+  // CRUD relations
+  creator User? @relation("CreatedBy", fields: [createdBy], references: [id])
+  updater User? @relation("UpdatedBy", fields: [updatedBy], references: [id])
+  deleter User? @relation("DeletedBy", fields: [deletedBy], references: [id])
+
+  @@map("companies")
+}
+
+// Portfolio-Company Junction Table
+model PortfolioCompany {
+  id          String @id @default(cuid())
+  portfolioId String
+  companyId   String
+  createdAt   DateTime @default(now())
+
+  portfolio Portfolio @relation(fields: [portfolioId], references: [id], onDelete: Cascade)
+  company   Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([portfolioId, companyId])
+  @@map("portfolio_companies")
 }
 
 // KPI & Data Management
@@ -162,16 +238,33 @@ model KPI {
   source       String?
   confidence   Float? // 0.00 to 1.00
   notes        String?
+  description  String?
+  targetValue  Float?
+  isActive     Boolean   @default(true)
   metadata     String?  // JSON as string for SQLite
   fundId       String?
   portfolioId  String?
+  companyId    String?
   organizationId String
+
+  // CRUD tracking
+  createdBy    String?
+  updatedBy    String?
+  deletedBy    String?
+  deletedAt    DateTime?
+
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   fund         Fund?        @relation(fields: [fundId], references: [id], onDelete: SetNull)
   portfolio    Portfolio?   @relation(fields: [portfolioId], references: [id], onDelete: SetNull)
+  company      Company?     @relation(fields: [companyId], references: [id], onDelete: SetNull)
+
+  // CRUD relations
+  creator User? @relation("CreatedBy", fields: [createdBy], references: [id])
+  updater User? @relation("UpdatedBy", fields: [updatedBy], references: [id])
+  deleter User? @relation("DeletedBy", fields: [deletedBy], references: [id])
 
   @@map("kpis")
 }
@@ -243,10 +336,11 @@ model Alert {
 model AuditLog {
   id           String   @id @default(cuid())
   userId       String
-  action       String
-  resourceType String   // Type of resource (ORGANIZATION, PORTFOLIO, KPI, etc.)
-  resourceId   String   // ID of the specific resource
-  metadata     String?  // JSON as string for SQLite - additional context
+  userEmail    String
+  action       String   // CREATE, READ, UPDATE, DELETE
+  entityType   String   // Type of entity (portfolio, company, kpi, etc.)
+  entityId     String   // ID of the specific entity
+  changes      String?  // JSON string of changes made
   timestamp    DateTime @default(now())
   ipAddress    String?
   userAgent    String?
@@ -254,8 +348,23 @@ model AuditLog {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
-  @@index([resourceType])
-  @@index([resourceId])
+  @@index([entityType])
+  @@index([entityId])
   @@index([timestamp])
+  @@index([action])
   @@map("audit_logs")
+}
+
+// Data Backup for Recovery
+model DataBackup {
+  id         String   @id @default(cuid())
+  entityType String   // Type of entity backed up
+  entityId   String   // ID of the entity backed up
+  backupData String   // JSON string of the backed up data
+  createdAt  DateTime @default(now())
+
+  @@index([entityType])
+  @@index([entityId])
+  @@index([createdAt])
+  @@map("data_backups")
 }

@@ -40,6 +40,15 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
+# Check if Vercel CLI is available (local or global)
+if ! command -v vercel &> /dev/null && ! npx vercel --version &> /dev/null; then
+    print_error "Vercel CLI not found. Installing locally..."
+    npm install vercel --save-dev
+fi
+
+# Use npx to run vercel commands
+VERCEL_CMD="npx vercel"
+
 print_status "Phase 3 Deployment Configuration:"
 echo "  ✅ All Phase 1 & 2 features (AI, NLP, advanced orchestrator)"
 echo "  ✅ Real financial data integration from multiple providers"

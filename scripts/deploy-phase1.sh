@@ -40,11 +40,14 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
-# Check if Vercel CLI is installed
-if ! command -v vercel &> /dev/null; then
-    print_error "Vercel CLI not found. Please install it with: npm install -g vercel"
-    exit 1
+# Check if Vercel CLI is available (local or global)
+if ! command -v vercel &> /dev/null && ! npx vercel --version &> /dev/null; then
+    print_error "Vercel CLI not found. Installing locally..."
+    npm install vercel --save-dev
 fi
+
+# Use npx to run vercel commands
+VERCEL_CMD="npx vercel"
 
 print_status "Phase 1 Deployment Configuration:"
 echo "  ✅ Core portfolio and KPI management"
@@ -137,7 +140,7 @@ set_vercel_env() {
     
     if [ -n "$value" ] && [ "$value" != "your-${key,,}-here" ]; then
         echo "Setting $key..."
-        echo "$value" | vercel env add "$key" "$env_type" --force > /dev/null 2>&1 || true
+        echo "$value" | $VERCEL_CMD env add "$key" "$env_type" --force > /dev/null 2>&1 || true
     fi
 }
 
@@ -163,7 +166,7 @@ print_success "Vercel environment variables configured"
 print_status "Step 5: Deploying to Vercel..."
 
 # Deploy with production flag
-if vercel --prod --yes; then
+if $VERCEL_CMD --prod --yes; then
     print_success "Deployment completed successfully!"
 else
     print_error "Deployment failed. Check Vercel logs for details."
@@ -178,7 +181,7 @@ print_status "Step 6: Running post-deployment verification..."
 sleep 10
 
 # Get deployment URL
-DEPLOYMENT_URL=$(vercel ls --scope=$(vercel whoami) | grep portfolio-kpi-copilot | head -1 | awk '{print $2}')
+DEPLOYMENT_URL=$($VERCEL_CMD ls --scope=$($VERCEL_CMD whoami) | grep portfolio-kpi-copilot | head -1 | awk '{print $2}' 2>/dev/null || echo "")
 
 if [ -z "$DEPLOYMENT_URL" ]; then
     DEPLOYMENT_URL="https://portfolio-kpi-copilot.vercel.app"

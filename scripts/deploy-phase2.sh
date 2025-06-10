@@ -40,6 +40,15 @@ if [ ! -f "package.json" ]; then
     exit 1
 fi
 
+# Check if Vercel CLI is available (local or global)
+if ! command -v vercel &> /dev/null && ! npx vercel --version &> /dev/null; then
+    print_error "Vercel CLI not found. Installing locally..."
+    npm install vercel --save-dev
+fi
+
+# Use npx to run vercel commands
+VERCEL_CMD="npx vercel"
+
 print_status "Phase 2 Deployment Configuration:"
 echo "  ✅ All Phase 1 features (Core AI, portfolio management)"
 echo "  ✅ Natural language KPI queries and processing"
@@ -130,16 +139,16 @@ set_vercel_env() {
     
     if [ -n "$value" ] && [ "$value" != "your-${key,,}-here" ]; then
         echo "Setting $key..."
-        echo "$value" | vercel env add "$key" "$env_type" --force > /dev/null 2>&1 || true
+        echo "$value" | $VERCEL_CMD env add "$key" "$env_type" --force > /dev/null 2>&1 || true
     fi
 }
 
 # Set Phase 2 specific variables
-vercel env add DEPLOYMENT_PHASE 2 production --force > /dev/null 2>&1 || true
-vercel env add ENABLE_NATURAL_LANGUAGE_QUERIES true production --force > /dev/null 2>&1 || true
-vercel env add ENABLE_ADVANCED_AI_ORCHESTRATOR true production --force > /dev/null 2>&1 || true
-vercel env add ENABLE_STREAMING_RESPONSES true production --force > /dev/null 2>&1 || true
-vercel env add ENABLE_AI_ANALYTICS true production --force > /dev/null 2>&1 || true
+$VERCEL_CMD env add DEPLOYMENT_PHASE 2 production --force > /dev/null 2>&1 || true
+$VERCEL_CMD env add ENABLE_NATURAL_LANGUAGE_QUERIES true production --force > /dev/null 2>&1 || true
+$VERCEL_CMD env add ENABLE_ADVANCED_AI_ORCHESTRATOR true production --force > /dev/null 2>&1 || true
+$VERCEL_CMD env add ENABLE_STREAMING_RESPONSES true production --force > /dev/null 2>&1 || true
+$VERCEL_CMD env add ENABLE_AI_ANALYTICS true production --force > /dev/null 2>&1 || true
 
 # Read and set other environment variables
 while IFS='=' read -r key value; do
@@ -159,7 +168,7 @@ print_success "Vercel environment variables configured for Phase 2"
 # Step 5: Deploy to Vercel
 print_status "Step 5: Deploying Phase 2 to Vercel..."
 
-if vercel --prod --yes; then
+if $VERCEL_CMD --prod --yes; then
     print_success "Phase 2 deployment completed successfully!"
 else
     print_error "Phase 2 deployment failed. Check Vercel logs for details."
@@ -172,7 +181,7 @@ print_status "Step 6: Running Phase 2 post-deployment verification..."
 
 sleep 10
 
-DEPLOYMENT_URL=$(vercel ls --scope=$(vercel whoami) | grep portfolio-kpi-copilot | head -1 | awk '{print $2}')
+DEPLOYMENT_URL=$($VERCEL_CMD ls --scope=$($VERCEL_CMD whoami) | grep portfolio-kpi-copilot | head -1 | awk '{print $2}' 2>/dev/null || echo "")
 
 if [ -z "$DEPLOYMENT_URL" ]; then
     DEPLOYMENT_URL="https://portfolio-kpi-copilot.vercel.app"
