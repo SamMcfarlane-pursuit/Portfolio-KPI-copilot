@@ -34,23 +34,24 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     return <>{children}</>
   }
 
-  // For authenticated users, show dashboard layout
-  if (session) {
+  // Show dashboard layout for both authenticated and unauthenticated users
+  // This enables demo mode for the portfolio dashboard
+  if (session || pathname === '/dashboard') {
     return (
       <div className="min-h-screen bg-background">
         {/* Main Navigation Header */}
         <MainNavigation />
-        
+
         <div className="flex h-[calc(100vh-4rem)]">
-          {/* Sidebar */}
-          <Sidebar />
-          
+          {/* Sidebar - only show for authenticated users */}
+          {session && <Sidebar />}
+
           {/* Main Content Area */}
-          <main className="flex-1 overflow-y-auto">
+          <main className={`flex-1 overflow-y-auto ${!session ? 'ml-0' : ''}`}>
             <div className="container mx-auto px-6 py-6">
-              {/* Breadcrumbs */}
-              <Breadcrumbs />
-              
+              {/* Breadcrumbs - only show for authenticated users */}
+              {session && <Breadcrumbs />}
+
               {/* Page Content */}
               {children}
             </div>
@@ -60,7 +61,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     )
   }
 
-  // For unauthenticated users trying to access protected routes
+  // For unauthenticated users trying to access other protected routes
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="text-center space-y-4">

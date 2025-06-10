@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, MessageSquare, TrendingUp, AlertTriangle, Lightbulb } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Loader2, MessageSquare, TrendingUp, AlertTriangle, Lightbulb, Brain, Zap, Target, CheckCircle } from 'lucide-react';
 
 interface AIInsight {
   type: 'performance' | 'risk' | 'opportunity' | 'trend';
@@ -186,19 +187,38 @@ export function AIInsightsPanel({
   };
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5" />
-          AI Portfolio Insights
+    <Card className="w-full border-l-4 border-l-blue-500 shadow-lg">
+      <CardHeader className="bg-gradient-to-r from-blue-50 to-purple-50">
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-2 bg-blue-100 rounded-lg">
+              <Brain className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <span className="text-lg font-bold">AI Portfolio Insights</span>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800 text-xs">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Real-time Analysis
+                </Badge>
+                {lastUpdated && (
+                  <span className="text-xs text-muted-foreground">
+                    Updated: {lastUpdated.toLocaleTimeString()}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-sm font-medium text-gray-600">Confidence Score</div>
+            <div className="flex items-center gap-2">
+              <Progress value={85} className="w-16 h-2" />
+              <span className="text-sm font-bold text-blue-600">85%</span>
+            </div>
+          </div>
         </CardTitle>
         <CardDescription>
-          AI-powered analysis of your portfolio performance and trends
-          {lastUpdated && (
-            <span className="block text-xs text-muted-foreground mt-1">
-              Last updated: {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
+          Enterprise-grade AI analysis of portfolio performance, trends, and strategic recommendations
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -219,43 +239,76 @@ export function AIInsightsPanel({
           </Button>
         </div>
 
-        {/* Insights List */}
-        <div className="space-y-3">
+        {/* Enhanced Insights List */}
+        <div className="space-y-4">
           {loading && insights.length === 0 ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin mr-2" />
-              <span>Generating insights...</span>
+            <div className="flex items-center justify-center py-12 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
+              <div className="text-center">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-3 text-blue-600" />
+                <span className="text-sm font-medium text-gray-700">Analyzing portfolio data...</span>
+                <div className="text-xs text-gray-500 mt-1">This may take a few moments</div>
+              </div>
             </div>
           ) : (
             insights.map((insight, index) => (
               <div
                 key={index}
-                className="p-3 border rounded-lg hover:bg-gray-50 transition-colors"
+                className="group p-4 border border-gray-200 rounded-xl hover:shadow-md hover:border-blue-200 transition-all duration-200 bg-white"
               >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    {getInsightIcon(insight.type)}
-                    <span className="font-medium text-sm">{insight.title}</span>
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${getInsightColor(insight.type).replace('text-', 'bg-').replace('-800', '-100')}`}>
+                      {getInsightIcon(insight.type)}
+                    </div>
+                    <div>
+                      <span className="font-semibold text-sm text-gray-900">{insight.title}</span>
+                      <div className="flex items-center gap-2 mt-1">
+                        <Badge className={getInsightColor(insight.type)} variant="secondary">
+                          {insight.type.toUpperCase()}
+                        </Badge>
+                        {insight.actionable && (
+                          <Badge variant="outline" className="text-xs border-green-200 text-green-700">
+                            <Target className="h-3 w-3 mr-1" />
+                            Actionable
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge className={getInsightColor(insight.type)}>
-                      {insight.type}
-                    </Badge>
-                    {insight.actionable && (
-                      <Badge variant="outline" className="text-xs">
-                        Actionable
-                      </Badge>
-                    )}
+                  <div className="text-right">
+                    <div className="flex items-center gap-1 text-xs text-gray-500 mb-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Confidence
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Progress
+                        value={insight.confidence}
+                        className="w-12 h-1.5"
+                        indicatorClassName={
+                          insight.confidence >= 80 ? "bg-green-500" :
+                          insight.confidence >= 60 ? "bg-blue-500" : "bg-amber-500"
+                        }
+                      />
+                      <span className="text-xs font-bold text-gray-700">
+                        {Math.round(insight.confidence)}%
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-gray-700 leading-relaxed mb-3 pl-11">
                   {insight.description}
                 </p>
-                <div className="mt-2 flex items-center justify-between">
-                  <div className="text-xs text-gray-500">
-                    Confidence: {Math.round(insight.confidence)}%
+                {insight.actionable && (
+                  <div className="pl-11">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-7 border-blue-200 text-blue-700 hover:bg-blue-50"
+                    >
+                      Take Action
+                    </Button>
                   </div>
-                </div>
+                )}
               </div>
             ))
           )}

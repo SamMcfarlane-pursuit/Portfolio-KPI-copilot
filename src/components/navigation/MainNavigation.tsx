@@ -51,50 +51,29 @@ const navigationItems: NavigationItem[] = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: Home,
-    description: 'Overview and key metrics',
-    requiresAuth: true
+    description: 'Portfolio overview',
+    requiresAuth: false // Allow demo access
   },
   {
-    name: 'Portfolio',
-    href: '/portfolio',
+    name: 'Companies',
+    href: '/real-data',
     icon: Building2,
-    description: 'Portfolio companies and investments',
+    description: 'Manage companies',
     requiresAuth: true
   },
   {
     name: 'Analytics',
     href: '/analytics',
     icon: TrendingUp,
-    description: 'Advanced analytics and insights',
+    description: 'Performance insights',
     requiresAuth: true
   },
   {
     name: 'AI Assistant',
     href: '/ai-assistant',
     icon: Brain,
-    description: 'AI-powered analysis and recommendations',
+    description: 'AI analysis',
     badge: 'AI',
-    requiresAuth: true
-  },
-  {
-    name: 'Data Management',
-    href: '/data',
-    icon: Database,
-    description: 'Data sources and management',
-    requiresAuth: true
-  },
-  {
-    name: 'Reports',
-    href: '/reports',
-    icon: FileText,
-    description: 'Generate and view reports',
-    requiresAuth: true
-  },
-  {
-    name: 'System Health',
-    href: '/system',
-    icon: Activity,
-    description: 'System status and monitoring',
     requiresAuth: true
   }
 ]
@@ -163,30 +142,30 @@ export function MainNavigation() {
         </div>
 
         {/* Desktop Navigation */}
-        {isAuthenticated && (
-          <nav className="hidden lg:flex items-center space-x-1">
-            {navigationItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <Button
-                  variant={isActivePath(item.href) ? "default" : "ghost"}
-                  size="sm"
-                  className={cn(
-                    "relative",
-                    isActivePath(item.href) && "bg-primary text-primary-foreground"
-                  )}
-                >
-                  <item.icon className="w-4 h-4 mr-2" />
-                  {item.name}
-                  {item.badge && (
-                    <Badge variant="secondary" className="ml-2 text-xs">
-                      {item.badge}
-                    </Badge>
-                  )}
-                </Button>
-              </Link>
-            ))}
-          </nav>
-        )}
+        <nav className="hidden lg:flex items-center space-x-1">
+          {navigationItems
+            .filter(item => !item.requiresAuth || isAuthenticated)
+            .map((item) => (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={isActivePath(item.href) ? "default" : "ghost"}
+                size="sm"
+                className={cn(
+                  "relative",
+                  isActivePath(item.href) && "bg-primary text-primary-foreground"
+                )}
+              >
+                <item.icon className="w-4 h-4 mr-2" />
+                {item.name}
+                {item.badge && (
+                  <Badge variant="secondary" className="ml-2 text-xs">
+                    {item.badge}
+                  </Badge>
+                )}
+              </Button>
+            </Link>
+          ))}
+        </nav>
 
         {/* Right Side Actions */}
         <div className="flex items-center space-x-3">

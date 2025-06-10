@@ -42,21 +42,21 @@ const mainNavItems: SidebarItem[] = [
     name: 'Dashboard',
     href: '/dashboard',
     icon: Home,
-    description: 'Overview and key metrics',
+    description: 'Portfolio overview',
     requiresAuth: true
   },
   {
-    name: 'Portfolio',
-    href: '/portfolio',
+    name: 'Companies',
+    href: '/real-data',
     icon: Building2,
-    description: 'Portfolio companies',
+    description: 'Manage portfolio companies',
     requiresAuth: true
   },
   {
     name: 'Analytics',
     href: '/analytics',
     icon: TrendingUp,
-    description: 'Advanced insights',
+    description: 'Performance insights',
     requiresAuth: true
   },
   {
@@ -69,14 +69,7 @@ const mainNavItems: SidebarItem[] = [
   }
 ]
 
-const dataNavItems: SidebarItem[] = [
-  {
-    name: 'Data Sources',
-    href: '/data',
-    icon: Database,
-    description: 'Manage data connections',
-    requiresAuth: true
-  },
+const toolsNavItems: SidebarItem[] = [
   {
     name: 'Reports',
     href: '/reports',
@@ -85,10 +78,10 @@ const dataNavItems: SidebarItem[] = [
     requiresAuth: true
   },
   {
-    name: 'System Health',
+    name: 'System Status',
     href: '/system',
     icon: Activity,
-    description: 'Monitor system status',
+    description: 'Monitor health',
     requiresAuth: true
   }
 ]
@@ -207,14 +200,14 @@ export function Sidebar({ className }: SidebarProps) {
 
         <Separator className="my-4" />
 
-        {/* Data & Tools */}
+        {/* Tools */}
         <div className="space-y-1">
           {!collapsed && (
             <p className="text-xs font-medium text-muted-foreground px-3 py-2">
-              Data & Tools
+              Tools
             </p>
           )}
-          {dataNavItems.map((item) => (
+          {toolsNavItems.map((item) => (
             <Link key={item.href} href={item.href}>
               <Button
                 variant={isActivePath(item.href) ? "default" : "ghost"}
