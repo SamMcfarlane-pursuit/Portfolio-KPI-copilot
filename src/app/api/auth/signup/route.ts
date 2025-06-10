@@ -70,10 +70,11 @@ export async function POST(request: NextRequest) {
       await prisma.auditLog.create({
         data: {
           userId: user.id,
-          action: 'USER_REGISTRATION',
-          resourceType: 'AUTH',
-          resourceId: user.id,
-          metadata: JSON.stringify({
+          userEmail: user.email,
+          action: 'CREATE',
+          entityType: 'AUTH',
+          entityId: user.id,
+          changes: JSON.stringify({
             method: 'email_password',
             email: user.email,
           }),

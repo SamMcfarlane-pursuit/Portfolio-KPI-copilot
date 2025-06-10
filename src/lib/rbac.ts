@@ -294,6 +294,7 @@ export class RBACService {
    */
   static async logAuditEvent(event: {
     userId: string
+    userEmail?: string
     action: string
     resourceType: string
     resourceId: string
@@ -303,10 +304,11 @@ export class RBACService {
       await prisma.auditLog.create({
         data: {
           userId: event.userId,
+          userEmail: event.userEmail || 'unknown',
           action: event.action,
-          resourceType: event.resourceType,
-          resourceId: event.resourceId,
-          metadata: JSON.stringify(event.metadata || {}),
+          entityType: event.resourceType,
+          entityId: event.resourceId,
+          changes: JSON.stringify(event.metadata || {}),
           timestamp: new Date(),
           ipAddress: 'unknown', // Will be enhanced with actual IP
           userAgent: 'unknown'  // Will be enhanced with actual user agent

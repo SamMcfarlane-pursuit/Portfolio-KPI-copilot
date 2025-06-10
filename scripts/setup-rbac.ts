@@ -325,10 +325,11 @@ async function setupRBAC() {
     await prisma.auditLog.create({
       data: {
         userId: createdUsers[0].id,
-        action: 'RBAC_SYSTEM_SETUP',
-        resourceType: 'SYSTEM',
-        resourceId: 'rbac-setup',
-        metadata: JSON.stringify({
+        userEmail: createdUsers[0].email,
+        action: 'CREATE',
+        entityType: 'SYSTEM',
+        entityId: 'rbac-setup',
+        changes: JSON.stringify({
           setupDate: new Date().toISOString(),
           organizationsCreated: 2,
           usersCreated: 4,

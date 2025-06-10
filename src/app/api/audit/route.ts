@@ -120,12 +120,12 @@ const getAuditLogs = async (request: NextRequest, context: { user: any }) => {
     const enrichedLogs = logs.map(log => ({
       id: log.id,
       action: log.action,
-      resourceType: log.resourceType,
-      resourceId: log.resourceId,
+      entityType: log.entityType,
+      entityId: log.entityId,
       timestamp: log.timestamp,
       ipAddress: log.ipAddress,
       userAgent: log.userAgent,
-      metadata: log.metadata ? JSON.parse(log.metadata) : {},
+      changes: log.changes ? JSON.parse(log.changes) : {},
       user: {
         id: log.user.id,
         name: log.user.name,
@@ -219,12 +219,12 @@ const getAuditStats = async (request: NextRequest, context: { user: any }) => {
       orderBy: { _count: { action: 'desc' } }
     })
 
-    // Get resource type statistics
-    const resourceStats = await prisma.auditLog.groupBy({
-      by: ['resourceType'],
+    // Get entity type statistics
+    const entityStats = await prisma.auditLog.groupBy({
+      by: ['entityType'],
       where: whereClause,
-      _count: { resourceType: true },
-      orderBy: { _count: { resourceType: 'desc' } }
+      _count: { entityType: true },
+      orderBy: { _count: { entityType: 'desc' } }
     })
 
     // Get user activity statistics
@@ -257,9 +257,9 @@ const getAuditStats = async (request: NextRequest, context: { user: any }) => {
           action: stat.action,
           count: stat._count.action
         })),
-        resourceBreakdown: resourceStats.map(stat => ({
-          resourceType: stat.resourceType,
-          count: stat._count.resourceType
+        entityBreakdown: entityStats.map(stat => ({
+          entityType: stat.entityType,
+          count: stat._count.entityType
         })),
         topUsers: userStats.map(stat => ({
           userId: stat.userId,

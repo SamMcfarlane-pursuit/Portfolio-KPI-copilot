@@ -276,10 +276,11 @@ export const authOptions: NextAuthOptions = {
           await prisma.auditLog.create({
             data: {
               userId: user.id,
-              action: 'SIGN_IN',
-              resourceType: 'AUTH',
-              resourceId: user.id,
-              metadata: JSON.stringify({
+              userEmail: user.email!,
+              action: 'READ',
+              entityType: 'AUTH',
+              entityId: user.id,
+              changes: JSON.stringify({
                 provider: account?.provider,
                 isNewUser,
               }),
@@ -305,9 +306,10 @@ export const authOptions: NextAuthOptions = {
           await prisma.auditLog.create({
             data: {
               userId: token.userId as string,
-              action: 'SIGN_OUT',
-              resourceType: 'AUTH',
-              resourceId: token.userId as string,
+              userEmail: token.email as string,
+              action: 'DELETE',
+              entityType: 'AUTH',
+              entityId: token.userId as string,
             },
           })
         } catch (error) {

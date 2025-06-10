@@ -282,10 +282,11 @@ export async function POST(request: NextRequest) {
     await prisma.auditLog.create({
       data: {
         userId: session.user.id,
-        action: 'CREATE_KPIS',
-        resourceType: 'KPI',
-        resourceId: organizationId,
-        metadata: JSON.stringify({
+        userEmail: session.user.email!,
+        action: 'CREATE',
+        entityType: 'KPI',
+        entityId: organizationId,
+        changes: JSON.stringify({
           count: createdKPIs.length,
           organizationId,
         }),

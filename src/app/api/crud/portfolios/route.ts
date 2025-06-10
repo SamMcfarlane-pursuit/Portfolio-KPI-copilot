@@ -5,14 +5,14 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { crudService, portfolioSchema } from '@/lib/services/crud-service'
-import { rateLimiter } from '@/lib/middleware/rate-limiter'
+import { rateLimiter, RATE_LIMIT_CONFIGS } from '@/lib/middleware/rate-limiter'
 import { z } from 'zod'
 
 // GET /api/crud/portfolios - List all portfolios or get specific portfolio
 export async function GET(request: NextRequest) {
   try {
     // Rate limiting
-    const rateLimitResult = await rateLimiter.checkRateLimit(request, 'crud-read', 100, 60000)
+    const rateLimitResult = await rateLimiter.checkLimit(request, RATE_LIMIT_CONFIGS.API_MODERATE)
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Rate limiting
-    const rateLimitResult = await rateLimiter.checkRateLimit(request, 'crud-create', 20, 60000)
+    const rateLimitResult = await rateLimiter.checkLimit(request, RATE_LIMIT_CONFIGS.API_STRICT)
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
@@ -116,7 +116,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Rate limiting
-    const rateLimitResult = await rateLimiter.checkRateLimit(request, 'crud-update', 30, 60000)
+    const rateLimitResult = await rateLimiter.checkLimit(request, RATE_LIMIT_CONFIGS.API_MODERATE)
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
@@ -186,7 +186,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     // Rate limiting
-    const rateLimitResult = await rateLimiter.checkRateLimit(request, 'crud-delete', 10, 60000)
+    const rateLimitResult = await rateLimiter.checkLimit(request, RATE_LIMIT_CONFIGS.API_STRICT)
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },
@@ -249,7 +249,7 @@ export async function DELETE(request: NextRequest) {
 export async function PATCH(request: NextRequest) {
   try {
     // Rate limiting
-    const rateLimitResult = await rateLimiter.checkRateLimit(request, 'crud-bulk', 5, 60000)
+    const rateLimitResult = await rateLimiter.checkLimit(request, RATE_LIMIT_CONFIGS.API_STRICT)
     if (!rateLimitResult.allowed) {
       return NextResponse.json(
         { error: 'Rate limit exceeded', retryAfter: rateLimitResult.retryAfter },

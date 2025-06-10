@@ -63,7 +63,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 
 // Entity types
 type EntityType = 'portfolios' | 'companies' | 'kpis'
@@ -290,7 +290,7 @@ export default function CRUDManager({ entityType, title }: CRUDManagerProps) {
               <div>
                 <Label htmlFor="currency">Currency</Label>
                 <Select
-                  value={formData.currency || 'USD'}
+                  value={(formData as any).currency || 'USD'}
                   onValueChange={(value) => setFormData({ ...formData, currency: value })}
                 >
                   <SelectTrigger>
@@ -319,7 +319,7 @@ export default function CRUDManager({ entityType, title }: CRUDManagerProps) {
               <Input
                 id="totalValue"
                 type="number"
-                value={formData.totalValue || ''}
+                value={(formData as any).totalValue || ''}
                 onChange={(e) => setFormData({ ...formData, totalValue: parseFloat(e.target.value) })}
                 placeholder="Enter total value"
               />
