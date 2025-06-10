@@ -9,9 +9,13 @@ import { authOptions } from '@/lib/auth'
 import { enhancedAIService } from '@/lib/ai/enhanced-ai-service'
 import { hybridData } from '@/lib/data/hybrid-data-layer'
 import { rateLimiter } from '@/lib/middleware/rate-limiter'
+import { requireFeature } from '@/lib/config/feature-flags'
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if natural language queries are enabled
+    requireFeature('enableNaturalLanguageQueries', 'Natural Language Queries')
+
     // Rate limiting
     const rateLimitResult = await rateLimiter.checkLimit(
       request,

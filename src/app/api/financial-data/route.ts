@@ -8,9 +8,13 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { financialDataService } from '@/lib/integrations/financial-data-service'
 import { rateLimiter } from '@/lib/middleware/rate-limiter'
+import { requireFeature } from '@/lib/config/feature-flags'
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if financial data API is enabled
+    requireFeature('enableFinancialDataAPI', 'Financial Data API')
+
     // Rate limiting
     const rateLimitResult = await rateLimiter.checkLimit(
       request,
