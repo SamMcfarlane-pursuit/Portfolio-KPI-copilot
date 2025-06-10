@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "name": "portfolio-kpi-copilot",
-  "alias": ["portfolio-kpi-copilot-production"],
   "framework": "nextjs",
   "buildCommand": "npm run build",
   "devCommand": "npm run dev",
