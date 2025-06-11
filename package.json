@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && next build",
+    "build": "rm -rf node_modules/.prisma && prisma generate && next build",
     "postinstall": "prisma generate",
     "start": "next start",
     "lint": "next lint",
@@ -26,7 +26,7 @@
     "test:coverage": "jest --coverage",
     "test:hybrid": "./scripts/test-hybrid-functionality.sh",
     "test:auth": "./scripts/test-authentication.sh",
-    "vercel:build": "npm install --legacy-peer-deps && prisma generate && next build",
+    "vercel:build": "npm install --legacy-peer-deps && rm -rf node_modules/.prisma && prisma generate && next build",
     "vercel:dev": "npm run db:generate && next dev",
     "deploy:check": "npm run lint && npm run type-check && npm run build",
     "business:metrics": "node -e \"console.log('Business metrics tracking enabled')\"",
