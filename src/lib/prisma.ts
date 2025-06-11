@@ -188,8 +188,8 @@ export async function checkDatabaseConnection() {
     await prisma.$queryRaw`SELECT 1`
     const responseTime = Date.now() - startTime
 
-    // Get additional connection info
-    const connectionInfo = await prisma.$queryRaw`PRAGMA database_list` as any[]
+    // Get additional connection info (PostgreSQL compatible)
+    const connectionInfo = await prisma.$queryRaw`SELECT current_database(), current_user, version()` as any[]
 
     return {
       status: 'healthy',
