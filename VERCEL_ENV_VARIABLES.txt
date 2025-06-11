@@ -1,0 +1,40 @@
+# ===================================================================
+# VERCEL ENVIRONMENT VARIABLES - COPY TO VERCEL DASHBOARD
+# Portfolio KPI Copilot Production Deployment
+# ===================================================================
+
+# CRITICAL: Replace these placeholder values with actual credentials
+
+# Database (Supabase PostgreSQL)
+DATABASE_URL=postgresql://postgres:[PASSWORD]@db.[PROJECT-REF].supabase.co:5432/postgres
+
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://[PROJECT-REF].supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=[ANON-KEY]
+SUPABASE_SERVICE_ROLE_KEY=[SERVICE-ROLE-KEY]
+
+# NextAuth Configuration
+NEXTAUTH_URL=https://portfolio-kpi-copilot.vercel.app
+NEXTAUTH_SECRET=knMDkhzRoqpySGulJY4qhE7sA1EuOqvZGCorD+605VQ=
+
+# OAuth Providers (Already configured)
+GOOGLE_CLIENT_ID=952865856234-p2ub78oa1udq8ng89146lri5pj1mdc7m.apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=[YOUR-GOOGLE-CLIENT-SECRET]
+GITHUB_ID=[YOUR-GITHUB-CLIENT-ID]
+GITHUB_SECRET=[YOUR-GITHUB-CLIENT-SECRET]
+AZURE_AD_CLIENT_ID=[YOUR-AZURE-CLIENT-ID]
+AZURE_AD_CLIENT_SECRET=[YOUR-AZURE-CLIENT-SECRET]
+AZURE_AD_TENANT_ID=[YOUR-AZURE-TENANT-ID]
+
+# AI Configuration
+OPENAI_API_KEY=[YOUR-OPENAI-API-KEY]
+OPENAI_MODEL=gpt-4o-mini
+DISABLE_OPENAI=false
+
+# Feature Flags
+USE_SUPABASE_PRIMARY=true
+FALLBACK_TO_SQLITE=false
+ENABLE_REALTIME_SUBSCRIPTIONS=true
+
+# Environment
+NODE_ENV=production
