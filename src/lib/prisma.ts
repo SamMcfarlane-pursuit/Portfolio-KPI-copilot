@@ -11,7 +11,7 @@ export const prisma =
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: process.env.DATABASE_URL || 'postgresql://postgres:Portcopilot1234%25@db.hccdikbrspmfrbwgxynv.supabase.co:5432/postgres',
       },
     },
     // Production optimizations
