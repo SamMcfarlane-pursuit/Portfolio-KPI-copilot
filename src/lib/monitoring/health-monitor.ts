@@ -126,7 +126,7 @@ export class HealthMonitor {
         details: {
           users: userCount,
           organizations: orgCount,
-          type: 'SQLite'
+          type: process.env.DATABASE_URL?.startsWith('postgresql') ? 'PostgreSQL' : 'SQLite'
         },
         lastChecked: new Date().toISOString()
       }
@@ -150,7 +150,7 @@ export class HealthMonitor {
           name: 'supabase',
           status: 'degraded',
           responseTime: Date.now() - startTime,
-          message: 'Supabase not configured - using SQLite fallback',
+          message: 'Supabase not configured - using database fallback',
           lastChecked: new Date().toISOString()
         }
       }
@@ -245,8 +245,8 @@ export class HealthMonitor {
       await hybridData.initialize()
       const status = hybridData.getStatus()
 
-      // Consider SQLite as healthy since it's our primary data source
-      const isHealthy = status.activeSource === 'sqlite' || status.sqlite.connected
+      // Consider database as healthy if connected
+      const isHealthy = status.activeSource === 'supabase' || status.activeSource === 'sqlite' || status.sqlite?.connected
 
       return {
         name: 'hybrid_data_layer',
