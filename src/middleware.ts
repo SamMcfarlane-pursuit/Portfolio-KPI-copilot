@@ -168,6 +168,7 @@ export default withAuth(
             req.nextUrl.pathname.startsWith('/api/debug/') ||
             req.nextUrl.pathname.startsWith('/api/env-check') ||
             req.nextUrl.pathname.startsWith('/api/env-diagnostic') ||
+            req.nextUrl.pathname.startsWith('/api/test-direct-supabase') ||
             req.nextUrl.pathname.startsWith('/api/public/') ||
             req.nextUrl.pathname === '/dashboard' ||
             req.nextUrl.pathname === '/data' ||
