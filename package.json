@@ -1,11 +1,11 @@
 {
   "name": "portfolio-kpi-copilot",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Enterprise Portfolio KPI Copilot - Advanced AI-powered KPI analysis and management",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "rm -rf node_modules/.prisma && (prisma generate || echo 'Prisma generation failed, using fallback') && next build",
+    "build": "rm -rf node_modules/.prisma && rm -rf .next && (prisma generate || echo 'Prisma generation failed, using fallback') && next build",
     "postinstall": "prisma generate || echo 'Prisma generation failed, continuing...'",
     "start": "next start",
     "lint": "next lint",
