@@ -30,11 +30,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         debug: true,
         database: {
-          url: databaseUrl ? databaseUrl.substring(0, 20) + '...' : 'NOT_SET',
+          url: databaseUrl ? databaseUrl.substring(0, 50) + '...' : 'NOT_SET',
+          fullUrlStart: databaseUrl ? databaseUrl.substring(0, 80) : 'NOT_SET',
           type: databaseUrl?.startsWith('postgresql') ? 'PostgreSQL' :
                 databaseUrl?.startsWith('file:') ? 'SQLite' : 'Unknown',
           supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?
-                      process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 30) + '...' : 'NOT_SET',
+                      process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 50) + '...' : 'NOT_SET',
           useSupabasePrimary: process.env.USE_SUPABASE_PRIMARY,
           fallbackToSqlite: process.env.FALLBACK_TO_SQLITE
         },
