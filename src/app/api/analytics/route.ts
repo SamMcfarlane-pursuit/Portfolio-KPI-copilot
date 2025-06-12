@@ -295,7 +295,7 @@ function generateTrendAnalysis(kpis: any[], timeframe: string): TrendAnalysis {
   const profitabilityTrend = generateTrendPoints(profitKPIs)
 
   // Generate KPI performance trends
-  const kpiCategories = [...new Set(kpis.map(k => k.category))]
+  const kpiCategories = Array.from(new Set(kpis.map(k => k.category)))
   const kpiPerformance = kpiCategories.map(category => {
     const categoryKPIs = kpis.filter(k => k.category === category)
     const trend = generateTrendPoints(categoryKPIs)

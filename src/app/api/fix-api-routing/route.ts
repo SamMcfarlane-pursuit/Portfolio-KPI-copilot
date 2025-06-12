@@ -43,7 +43,7 @@ export async function GET(request: NextRequest) {
   let dbStatus = 'unknown'
   try {
     // Try to import and test database connection
-    const { prisma } = await import('@/lib/prisma')
+    const { prisma } = await import('../../../lib/prisma')
     await prisma.$queryRaw`SELECT 1`
     dbStatus = 'connected'
   } catch (error) {
@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
   // Check 3: NextAuth Configuration
   let authStatus = 'unknown'
   try {
-    const { authOptions } = await import('@/lib/auth')
+    const { authOptions } = await import('../../../lib/auth')
     authStatus = authOptions ? 'configured' : 'missing'
   } catch (error) {
     authStatus = 'error'
@@ -95,28 +95,28 @@ export async function GET(request: NextRequest) {
 
   // Check if API route files exist (simplified check)
   try {
-    await import('@/app/api/portfolios/route')
+    await import('../portfolios/route')
     apiRouteChecks[0].exists = true
   } catch (e) {
     // Route doesn't exist or has errors
   }
 
   try {
-    await import('@/app/api/companies/route')
+    await import('../companies/route')
     apiRouteChecks[1].exists = true
   } catch (e) {
     // Route doesn't exist or has errors
   }
 
   try {
-    await import('@/app/api/kpis/route')
+    await import('../kpis/route')
     apiRouteChecks[2].exists = true
   } catch (e) {
     // Route doesn't exist or has errors
   }
 
   try {
-    await import('@/app/api/health/route')
+    await import('../health/route')
     apiRouteChecks[3].exists = true
   } catch (e) {
     // Route doesn't exist or has errors
@@ -276,7 +276,7 @@ export async function POST(request: NextRequest) {
 
 async function testDatabaseConnection() {
   try {
-    const { prisma } = await import('@/lib/prisma')
+    const { prisma } = await import('../../../lib/prisma')
     const result = await prisma.$queryRaw`SELECT 1 as test`
     return NextResponse.json({
       success: true,
@@ -294,7 +294,7 @@ async function testDatabaseConnection() {
 
 async function testAuthConfiguration() {
   try {
-    const { authOptions } = await import('@/lib/auth')
+    const { authOptions } = await import('../../../lib/auth')
     return NextResponse.json({
       success: true,
       auth: 'configured',
@@ -320,7 +320,7 @@ async function testApiRoutes() {
   const results = []
   for (const route of routes) {
     try {
-      await import(`@/app${route}/route`)
+      await import(`.${route}/route`)
       results.push({ route, status: 'OK' })
     } catch (error) {
       results.push({ 
