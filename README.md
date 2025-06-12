@@ -246,3 +246,4 @@ Stay updated with the latest features:
 # Portfolio-KPI-copilot
 # DATABASE_URL Successfully Added to Vercel
 # DATABASE_URL Added to All Environments
+# Force Prisma Regeneration
