@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "echo 'CACHE_BUST_1749763981' && rm -rf node_modules/.prisma && rm -rf .next && rm -rf node_modules/@prisma && rm -rf prisma/migrations && rm -rf .vercel && npm cache clean --force && (prisma generate --force-reset || echo 'Prisma generation failed, using fallback') && next build",
+    "build": "rm -rf node_modules/.prisma && rm -rf .next && (prisma generate || echo 'Prisma generation failed, using fallback') && next build",
     "postinstall": "prisma generate || echo 'Prisma generation failed, continuing...'",
     "start": "next start",
     "lint": "next lint",
