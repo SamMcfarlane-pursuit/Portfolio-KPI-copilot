@@ -4,7 +4,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js'
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import { Database } from '@/lib/supabase/types'
 
 export interface MigrationOptions {
@@ -32,7 +32,6 @@ export interface MigrationResult {
 
 export class SupabaseMigrationService {
   private supabase: ReturnType<typeof createClient<Database>>
-  private prisma: PrismaClient
 
   constructor() {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -43,7 +42,6 @@ export class SupabaseMigrationService {
     }
 
     this.supabase = createClient<Database>(supabaseUrl, supabaseServiceKey)
-    this.prisma = new PrismaClient()
   }
 
   async migrateToSupabase(options: MigrationOptions = {}): Promise<MigrationResult> {
@@ -346,7 +344,7 @@ export class SupabaseMigrationService {
 
     switch (tableName) {
       case 'organizations':
-        const orgs = await this.prisma.organization.findMany()
+        const orgs = await prisma.organization.findMany()
         for (const org of orgs) {
           if (dryRun) {
             console.log(`[DRY RUN] Would migrate organization: ${org.name}`)
@@ -379,7 +377,7 @@ export class SupabaseMigrationService {
         break
 
       case 'users':
-        const users = await this.prisma.user.findMany()
+        const users = await prisma.user.findMany()
         for (const user of users) {
           if (dryRun) {
             console.log(`[DRY RUN] Would migrate user: ${user.email}`)

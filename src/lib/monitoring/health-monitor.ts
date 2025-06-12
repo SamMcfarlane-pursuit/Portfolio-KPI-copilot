@@ -107,7 +107,7 @@ export class HealthMonitor {
     const startTime = Date.now()
     
     try {
-      const prisma = new PrismaClient()
+      const { prisma } = await import('@/lib/prisma')
       
       // Test basic connectivity
       await prisma.$queryRaw`SELECT 1`

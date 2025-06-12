@@ -89,11 +89,9 @@ export async function GET(request: NextRequest) {
 async function checkDatabaseHealth() {
   try {
     // Simple database connectivity check
-    const { PrismaClient } = await import('@prisma/client')
-    const prisma = new PrismaClient()
-    
+    const { prisma } = await import('@/lib/prisma')
+
     await prisma.$queryRaw`SELECT 1`
-    await prisma.$disconnect()
     
     return {
       status: 'healthy',
