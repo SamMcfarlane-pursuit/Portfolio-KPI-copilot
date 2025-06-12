@@ -4,13 +4,10 @@
  * Automatically chooses the best available data source with intelligent fallback
  */
 
-import { PrismaClient } from '@prisma/client'
+import { prisma } from '@/lib/prisma'
 import { supabaseServer } from '@/lib/supabase/server'
 import { Database } from '@/lib/supabase/types'
 import RBACService from '@/lib/rbac'
-
-// Initialize clients
-const prisma = new PrismaClient()
 
 // Configuration flags
 const USE_SUPABASE_PRIMARY = process.env.USE_SUPABASE_PRIMARY === 'true'
