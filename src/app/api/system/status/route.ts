@@ -168,6 +168,31 @@ async function checkAPI(): Promise<ServiceStatus> {
 
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const debug = searchParams.get('debug') === 'true'
+
+    // Add debug info if requested
+    if (debug) {
+      const databaseUrl = process.env.DATABASE_URL
+      return NextResponse.json({
+        debug: true,
+        database: {
+          url: databaseUrl ? databaseUrl.substring(0, 30) + '...' : 'NOT_SET',
+          type: databaseUrl?.startsWith('postgresql') ? 'PostgreSQL' :
+                databaseUrl?.startsWith('file:') ? 'SQLite' : 'Unknown',
+          supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?
+                      process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 40) + '...' : 'NOT_SET',
+          useSupabasePrimary: process.env.USE_SUPABASE_PRIMARY,
+          fallbackToSqlite: process.env.FALLBACK_TO_SQLITE
+        },
+        environment: {
+          nodeEnv: process.env.NODE_ENV,
+          vercelUrl: process.env.VERCEL_URL
+        },
+        timestamp: new Date().toISOString()
+      })
+    }
+
     // Run all health checks in parallel
     const [databaseStatus, aiStatus, apiStatus] = await Promise.all([
       checkDatabase(),
