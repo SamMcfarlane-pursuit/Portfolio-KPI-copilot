@@ -21,12 +21,14 @@ export const prisma =
     }
   })
 
-// Debug logging
+// Debug logging with cache bust
 if (process.env.NODE_ENV === 'production') {
-  console.log('🔍 Prisma Client Debug:', {
+  console.log('🔥 CACHE_BUST_1749763981 - Prisma Client Debug:', {
     databaseUrl: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + '...' : 'NOT_SET',
     nodeEnv: process.env.NODE_ENV,
-    vercelUrl: process.env.VERCEL_URL ? 'SET' : 'NOT_SET'
+    vercelUrl: process.env.VERCEL_URL ? 'SET' : 'NOT_SET',
+    timestamp: new Date().toISOString(),
+    cacheBust: '1749763981'
   })
 }
 
