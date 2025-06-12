@@ -11,7 +11,7 @@ export const prisma =
     log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
     datasources: {
       db: {
-        url: process.env.DATABASE_URL,
+        url: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/postgres',
       },
     },
     // Production optimizations
@@ -20,6 +20,15 @@ export const prisma =
       timeout: 10000, // 10 seconds
     }
   })
+
+// Debug logging
+if (process.env.NODE_ENV === 'production') {
+  console.log('🔍 Prisma Client Debug:', {
+    databaseUrl: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + '...' : 'NOT_SET',
+    nodeEnv: process.env.NODE_ENV,
+    vercelUrl: process.env.VERCEL_URL ? 'SET' : 'NOT_SET'
+  })
+}
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
