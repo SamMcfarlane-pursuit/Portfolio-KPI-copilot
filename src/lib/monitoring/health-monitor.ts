@@ -105,31 +105,62 @@ export class HealthMonitor {
 
   private async checkDatabase(): Promise<HealthCheck> {
     const startTime = Date.now()
-    
-    try {
-      const { prisma } = await import('@/lib/prisma')
-      
-      // Test basic connectivity
-      await prisma.$queryRaw`SELECT 1`
-      
-      // Test table access
-      const userCount = await prisma.user.count()
-      const orgCount = await prisma.organization.count()
-      
-      await prisma.$disconnect()
 
+    try {
+      // Try direct Supabase connection first
+      const client = supabaseServer.getClient()
+
+      if (!client) {
+        throw new Error('Supabase client not configured')
+      }
+
+      // Test basic query
+      const { data: orgData, error: orgError } = await client
+        .from('organizations')
+        .select('id')
+        .limit(1)
+
+      if (orgError && !orgError.message.includes('does not exist')) {
+        // If Supabase fails, try Prisma as fallback
+        try {
+          const { prisma } = await import('@/lib/prisma')
+          await prisma.$queryRaw`SELECT 1`
+          const userCount = await prisma.user.count()
+          const orgCount = await prisma.organization.count()
+          await prisma.$disconnect()
+
+          return {
+            name: 'database',
+            status: 'healthy',
+            responseTime: Date.now() - startTime,
+            message: 'Database connection successful (Prisma fallback)',
+            details: {
+              users: userCount,
+              organizations: orgCount,
+              provider: 'prisma_fallback',
+              supabaseError: orgError.message
+            },
+            lastChecked: new Date().toISOString()
+          }
+        } catch (prismaError) {
+          throw new Error(`Both Supabase and Prisma failed: ${orgError.message}, ${prismaError}`)
+        }
+      }
+
+      // Supabase success
       return {
         name: 'database',
         status: 'healthy',
         responseTime: Date.now() - startTime,
-        message: 'Database connection successful',
+        message: 'Database connection successful (Supabase)',
         details: {
-          users: userCount,
-          organizations: orgCount,
-          type: process.env.DATABASE_URL?.startsWith('postgresql') ? 'PostgreSQL' : 'SQLite'
+          dataCount: orgData?.length || 0,
+          tableExists: !orgError,
+          provider: 'supabase'
         },
         lastChecked: new Date().toISOString()
       }
+
     } catch (error) {
       return {
         name: 'database',
