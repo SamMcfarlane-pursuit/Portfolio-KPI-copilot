@@ -341,10 +341,10 @@ function generateTrendPoints(kpis: any[]): TrendPoint[] {
   }, {} as { [key: string]: any[] })
 
   return Object.entries(periodGroups)
-    .map(([period, periodKPIs]) => ({
+    .map(([period, periodKPIs]: [string, any[]]) => ({
       period,
-      value: periodKPIs.reduce((sum, kpi) => sum + kpi.value, 0) / periodKPIs.length,
-      target: periodKPIs.find(kpi => kpi.targetValue)?.targetValue
+      value: periodKPIs.reduce((sum: number, kpi: any) => sum + kpi.value, 0) / periodKPIs.length,
+      target: periodKPIs.find((kpi: any) => kpi.targetValue)?.targetValue
     }))
     .sort((a, b) => a.period.localeCompare(b.period))
 }
