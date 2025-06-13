@@ -5,10 +5,61 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { healthMonitor } from '@/lib/monitoring/health-monitor'
+import { supabaseServer } from '@/lib/supabase/server'
 
 // Force dynamic rendering for health checks
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
+
+// Direct Supabase health check function
+async function checkSupabaseHealth() {
+  try {
+    const startTime = Date.now()
+    const client = supabaseServer.getClient()
+
+    if (!client) {
+      return {
+        status: 'error',
+        message: 'Supabase client not configured',
+        responseTime: Date.now() - startTime
+      }
+    }
+
+    // Test basic query - try to select from organizations table
+    const { data, error } = await client
+      .from('organizations')
+      .select('id')
+      .limit(1)
+
+    const responseTime = Date.now() - startTime
+
+    if (error && !error.message.includes('does not exist')) {
+      return {
+        status: 'error',
+        message: 'Supabase query failed',
+        error: error.message,
+        responseTime
+      }
+    }
+
+    // Success - either got data or table doesn't exist yet (which is fine)
+    return {
+      status: 'healthy',
+      message: 'Supabase connection successful',
+      responseTime,
+      dataCount: data?.length || 0,
+      tableExists: !error
+    }
+
+  } catch (error) {
+    return {
+      status: 'error',
+      message: 'Supabase health check failed',
+      error: error instanceof Error ? error.message : 'Unknown error',
+      responseTime: 0
+    }
+  }
+}
 
 // GET comprehensive health check
 export async function GET(request: NextRequest) {
@@ -27,6 +78,8 @@ export async function GET(request: NextRequest) {
     if (debug) {
       // Return debug information including database configuration
       const databaseUrl = process.env.DATABASE_URL
+      const supabaseHealth = await checkSupabaseHealth()
+
       return NextResponse.json({
         debug: true,
         database: {
@@ -37,7 +90,8 @@ export async function GET(request: NextRequest) {
           supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ?
                       process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 50) + '...' : 'NOT_SET',
           useSupabasePrimary: process.env.USE_SUPABASE_PRIMARY,
-          fallbackToSqlite: process.env.FALLBACK_TO_SQLITE
+          fallbackToSqlite: process.env.FALLBACK_TO_SQLITE,
+          supabaseHealth
         },
         environment: {
           nodeEnv: process.env.NODE_ENV,

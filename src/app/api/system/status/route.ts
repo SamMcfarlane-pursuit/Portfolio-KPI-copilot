@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { supabaseServer } from '@/lib/supabase/server'
 
 // Force dynamic rendering for system status
 export const dynamic = 'force-dynamic'
@@ -36,28 +37,73 @@ interface SystemStatusResponse {
 async function checkDatabase(): Promise<ServiceStatus> {
   const startTime = Date.now()
   try {
-    // Test database connection with a simple query
-    await prisma.$queryRaw`SELECT 1`
-    
-    // Test basic operations
-    const portfolioCount = await prisma.portfolio.count()
-    const organizationCount = await prisma.organization.count()
-    
-    const responseTime = Date.now() - startTime
-    
-    return {
-      status: 'healthy',
-      message: 'Database connection successful',
-      responseTime,
-      details: {
-        portfolios: portfolioCount,
-        organizations: organizationCount
+    // Try direct Supabase connection first
+    const client = supabaseServer.getClient()
+
+    if (!client) {
+      return {
+        status: 'error',
+        message: 'Supabase client not configured',
+        responseTime: Date.now() - startTime,
+        details: { error: 'Supabase client initialization failed' }
       }
     }
+
+    // Test basic query
+    const { data: orgData, error: orgError } = await client
+      .from('organizations')
+      .select('id')
+      .limit(1)
+
+    const responseTime = Date.now() - startTime
+
+    if (orgError && !orgError.message.includes('does not exist')) {
+      // If Supabase fails, try Prisma as fallback
+      try {
+        await prisma.$queryRaw`SELECT 1`
+        const portfolioCount = await prisma.portfolio.count()
+        const organizationCount = await prisma.organization.count()
+
+        return {
+          status: 'healthy',
+          message: 'Database connection successful (Prisma fallback)',
+          responseTime: Date.now() - startTime,
+          details: {
+            provider: 'prisma',
+            portfolios: portfolioCount,
+            organizations: organizationCount,
+            supabaseError: orgError.message
+          }
+        }
+      } catch (prismaError) {
+        return {
+          status: 'error',
+          message: 'Database connection failed',
+          responseTime: Date.now() - startTime,
+          details: {
+            supabaseError: orgError.message,
+            prismaError: prismaError instanceof Error ? prismaError.message : 'Unknown error'
+          }
+        }
+      }
+    }
+
+    // Supabase success
+    return {
+      status: 'healthy',
+      message: 'Database connection successful (Supabase)',
+      responseTime,
+      details: {
+        provider: 'supabase',
+        dataCount: orgData?.length || 0,
+        tableExists: !orgError
+      }
+    }
+
   } catch (error) {
     const responseTime = Date.now() - startTime
     console.error('Database health check failed:', error)
-    
+
     return {
       status: 'error',
       message: 'Database connection failed',
