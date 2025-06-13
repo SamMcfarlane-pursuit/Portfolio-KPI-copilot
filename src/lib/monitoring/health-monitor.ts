@@ -4,7 +4,6 @@
  */
 
 import { PrismaClient } from '@prisma/client'
-import { supabaseServer } from '@/lib/supabase/server'
 import { hybridData } from '@/lib/data/hybrid-data-layer'
 import { openRouterService } from '@/lib/ai/openrouter'
 import { aiOrchestrator } from '@/lib/ai/orchestrator'
@@ -108,6 +107,7 @@ export class HealthMonitor {
 
     try {
       // Try direct Supabase connection first
+      const { supabaseServer } = await import('@/lib/supabase/server')
       const client = supabaseServer.getClient()
 
       if (!client) {
@@ -176,6 +176,8 @@ export class HealthMonitor {
     const startTime = Date.now()
     
     try {
+      const { supabaseServer } = await import('@/lib/supabase/server')
+
       if (!supabaseServer.isConfigured()) {
         return {
           name: 'supabase',
