@@ -119,6 +119,7 @@ export function MainNavigation() {
   }
 
   const isActivePath = (href: string) => {
+    if (!pathname) return false
     if (href === '/dashboard' && pathname === '/') return true
     return pathname.startsWith(href)
   }

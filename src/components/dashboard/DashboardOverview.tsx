@@ -131,7 +131,7 @@ export function DashboardOverview() {
             Welcome back, {session?.user?.name?.split(' ')[0] || 'User'}!
           </h1>
           <p className="text-muted-foreground">
-            Here's what's happening with your portfolio today
+            Here&apos;s what&apos;s happening with your portfolio today
           </p>
         </div>
         <div className="flex items-center space-x-2">

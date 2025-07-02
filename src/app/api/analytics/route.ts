@@ -341,10 +341,10 @@ function generateTrendPoints(kpis: any[]): TrendPoint[] {
   }, {} as { [key: string]: any[] })
 
   return Object.entries(periodGroups)
-    .map(([period, periodKPIs]: [string, any[]]) => ({
+    .map(([period, periodKPIs]) => ({
       period,
-      value: periodKPIs.reduce((sum: number, kpi: any) => sum + kpi.value, 0) / periodKPIs.length,
-      target: periodKPIs.find((kpi: any) => kpi.targetValue)?.targetValue
+      value: (periodKPIs as any[]).reduce((sum: number, kpi: any) => sum + kpi.value, 0) / (periodKPIs as any[]).length,
+      target: (periodKPIs as any[]).find((kpi: any) => kpi.targetValue)?.targetValue
     }))
     .sort((a, b) => a.period.localeCompare(b.period))
 }
@@ -353,7 +353,7 @@ async function generateBenchmarks(kpis: any[], portfolios: any[]): Promise<Bench
   // This would typically connect to external benchmark data sources
   // For now, we'll generate mock benchmark data
   
-  const sectors = [...new Set(portfolios.map(p => p.sector).filter(Boolean))]
+  const sectors = Array.from(new Set(portfolios.map(p => p.sector).filter(Boolean)))
   
   return {
     industryAverages: {

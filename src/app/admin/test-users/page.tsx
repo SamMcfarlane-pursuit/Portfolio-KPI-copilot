@@ -64,7 +64,7 @@ export default function TestUsersPage() {
         <Alert className="mb-8">
           <Shield className="h-4 w-4" />
           <AlertDescription>
-            <strong>How it works:</strong> Add email addresses as "test users" in Google Console. 
+            <strong>How it works:</strong> Add email addresses as &quot;test users&quot; in Google Console.
             These users can sign in immediately without app verification.
           </AlertDescription>
         </Alert>
@@ -174,8 +174,8 @@ export default function TestUsersPage() {
                 <div className="flex items-start space-x-3">
                   <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">2</span>
                   <div>
-                    <p className="font-semibold">Find "Test users" Section</p>
-                    <p className="text-sm text-gray-600">Scroll down to the "Test users" section on the OAuth consent screen page</p>
+                    <p className="font-semibold">Find &quot;Test users&quot; Section</p>
+                    <p className="text-sm text-gray-600">Scroll down to the &quot;Test users&quot; section on the OAuth consent screen page</p>
                   </div>
                 </div>
 
@@ -183,7 +183,7 @@ export default function TestUsersPage() {
                   <span className="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">3</span>
                   <div>
                     <p className="font-semibold">Add Test Users</p>
-                    <p className="text-sm text-gray-600">Click "+ ADD USERS" and paste the email addresses from your list above</p>
+                    <p className="text-sm text-gray-600">Click &quot;+ ADD USERS&quot; and paste the email addresses from your list above</p>
                   </div>
                 </div>
 
@@ -191,7 +191,7 @@ export default function TestUsersPage() {
                   <span className="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">✓</span>
                   <div>
                     <p className="font-semibold">Save and Test</p>
-                    <p className="text-sm text-gray-600">Click "SAVE" and test authentication immediately</p>
+                    <p className="text-sm text-gray-600">Click &quot;SAVE&quot; and test authentication immediately</p>
                   </div>
                 </div>
               </div>
@@ -209,9 +209,9 @@ export default function TestUsersPage() {
           {/* Alternative for Unverified App */}
           <Card>
             <CardHeader>
-              <CardTitle>Alternative: Guide Users Through "Unverified App" Warning</CardTitle>
+              <CardTitle>Alternative: Guide Users Through &quot;Unverified App&quot; Warning</CardTitle>
               <CardDescription>
-                If you don't want to add test users, users can still sign in by following these steps
+                If you don&apos;t want to add test users, users can still sign in by following these steps
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -219,10 +219,10 @@ export default function TestUsersPage() {
                 <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
                   <h4 className="font-semibold text-amber-800 mb-2">User Instructions:</h4>
                   <ol className="list-decimal list-inside space-y-1 text-sm text-amber-700">
-                    <li>Click "Continue with Google" on the sign-in page</li>
-                    <li>When you see "This app isn't verified" warning</li>
-                    <li>Click <strong>"Advanced"</strong> (small text at bottom)</li>
-                    <li>Click <strong>"Go to Portfolio KPI Copilot (unsafe)"</strong></li>
+                    <li>Click &quot;Continue with Google&quot; on the sign-in page</li>
+                    <li>When you see &quot;This app isn&apos;t verified&quot; warning</li>
+                    <li>Click <strong>&quot;Advanced&quot;</strong> (small text at bottom)</li>
+                    <li>Click <strong>&quot;Go to Portfolio KPI Copilot (unsafe)&quot;</strong></li>
                     <li>Grant permissions and continue</li>
                   </ol>
                 </div>

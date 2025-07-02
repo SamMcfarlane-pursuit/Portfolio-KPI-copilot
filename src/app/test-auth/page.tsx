@@ -189,7 +189,7 @@ export default function TestAuthPage() {
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-sm space-y-2">
-              <p><strong>If you see "Access Denied" error:</strong></p>
+              <p><strong>If you see &quot;Access Denied&quot; error:</strong></p>
               <ul className="list-disc list-inside space-y-1 text-gray-600">
                 <li>The Google OAuth app is in testing mode</li>
                 <li>Your email needs to be added as a test user in Google Console</li>

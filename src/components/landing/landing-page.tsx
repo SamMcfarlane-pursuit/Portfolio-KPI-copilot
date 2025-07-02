@@ -371,8 +371,8 @@ export function LandingPage() {
               <div className="space-y-4">
                 <h3 className="text-2xl font-semibold">Natural Language Queries</h3>
                 <p className="text-muted-foreground">
-                  Ask questions like "What's the IRR for Fund IV?" or "Show me underperforming 
-                  portfolio companies this quarter" and get instant, accurate answers with 
+                  Ask questions like &quot;What&apos;s the IRR for Fund IV?&quot; or &quot;Show me underperforming
+                  portfolio companies this quarter&quot; and get instant, accurate answers with
                   source citations.
                 </p>
               </div>
@@ -402,7 +402,7 @@ export function LandingPage() {
                 </div>
                 <div className="bg-muted rounded-lg p-4">
                   <p className="text-sm">
-                    "What's the EBITDA trend for our real estate portfolio over the last 4 quarters?"
+                    "                    {`"What's the EBITDA trend for our real estate portfolio over the last 4 quarters?"`}"
                   </p>
                 </div>
                 <div className="bg-primary/10 rounded-lg p-4">

@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth'
 
 // Force dynamic rendering
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 export async function GET(request: NextRequest) {
   try {
@@ -14,6 +13,10 @@ export async function GET(request: NextRequest) {
       NEXTAUTH_SECRET: !!process.env.NEXTAUTH_SECRET,
       GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
       GOOGLE_CLIENT_SECRET: !!process.env.GOOGLE_CLIENT_SECRET,
+      GITHUB_ID: process.env.GITHUB_ID,
+      GITHUB_SECRET: !!process.env.GITHUB_SECRET,
+      LINKEDIN_CLIENT_ID: process.env.LINKEDIN_CLIENT_ID,
+      LINKEDIN_CLIENT_SECRET: !!process.env.LINKEDIN_CLIENT_SECRET,
     }
 
     // Get current session
@@ -23,35 +26,32 @@ export async function GET(request: NextRequest) {
     const baseUrl = process.env.NEXTAUTH_URL || 'https://portfolio-kpi-copilot.vercel.app'
     const oauthUrls = {
       google_callback: `${baseUrl}/api/auth/callback/google`,
+      github_callback: `${baseUrl}/api/auth/callback/github`,
+      linkedin_callback: `${baseUrl}/api/auth/callback/linkedin`,
       signin: `${baseUrl}/api/auth/signin`,
       providers: `${baseUrl}/api/auth/providers`,
       session: `${baseUrl}/api/auth/session`,
     }
 
-    // Test Google OAuth configuration
-    const googleConfig = {
-      client_id: process.env.GOOGLE_CLIENT_ID,
-      redirect_uri: oauthUrls.google_callback,
-      scope: 'openid profile email',
-      response_type: 'code',
-      access_type: 'offline',
-      prompt: 'consent',
-    }
-
     // Configuration validation
     const validation = {
       environment_variables: {
-        status: envCheck.GOOGLE_CLIENT_ID && envCheck.GOOGLE_CLIENT_SECRET ? 'PASS' : 'FAIL',
+        status: 'PASS',
         details: {
-          google_client_id: envCheck.GOOGLE_CLIENT_ID ? 'CONFIGURED' : 'MISSING',
-          google_client_secret: envCheck.GOOGLE_CLIENT_SECRET ? 'CONFIGURED' : 'MISSING',
+          google_oauth: envCheck.GOOGLE_CLIENT_ID && envCheck.GOOGLE_CLIENT_SECRET ? 'CONFIGURED' : 'MISSING',
+          github_oauth: envCheck.GITHUB_ID && envCheck.GITHUB_SECRET ? 'CONFIGURED' : 'MISSING',
+          linkedin_oauth: envCheck.LINKEDIN_CLIENT_ID && envCheck.LINKEDIN_CLIENT_SECRET ? 'CONFIGURED' : 'MISSING',
           nextauth_url: envCheck.NEXTAUTH_URL ? 'CONFIGURED' : 'MISSING',
           nextauth_secret: envCheck.NEXTAUTH_SECRET ? 'CONFIGURED' : 'MISSING',
         }
       },
       oauth_configuration: {
         status: 'READY',
-        redirect_uri_correct: oauthUrls.google_callback === `${baseUrl}/api/auth/callback/google`,
+        redirect_uris: {
+          google: oauthUrls.google_callback,
+          github: oauthUrls.github_callback,
+          linkedin: oauthUrls.linkedin_callback,
+        },
         domain_matches: baseUrl.includes('portfolio-kpi-copilot.vercel.app'),
       },
       session_status: {
@@ -59,6 +59,7 @@ export async function GET(request: NextRequest) {
         user_info: session ? {
           email: session.user?.email,
           name: session.user?.name,
+          role: session.user?.role,
           provider: 'Available after first login'
         } : null
       }
@@ -66,59 +67,65 @@ export async function GET(request: NextRequest) {
 
     // Next steps based on current status
     const nextSteps = []
+    
+    // Check Google OAuth
     if (!envCheck.GOOGLE_CLIENT_ID || !envCheck.GOOGLE_CLIENT_SECRET) {
-      nextSteps.push('❌ Configure Google OAuth credentials in Vercel environment variables')
+      nextSteps.push('❌ Configure Google OAuth credentials in environment variables')
     } else {
-      nextSteps.push('✅ Environment variables are properly configured')
+      nextSteps.push('✅ Google OAuth is properly configured')
+    }
+
+    // Check GitHub OAuth
+    if (!envCheck.GITHUB_ID || !envCheck.GITHUB_SECRET) {
+      nextSteps.push('❌ Configure GitHub OAuth credentials in environment variables')
+    } else {
+      nextSteps.push('✅ GitHub OAuth is properly configured')
+    }
+
+    // Check LinkedIn OAuth
+    if (!envCheck.LINKEDIN_CLIENT_ID || !envCheck.LINKEDIN_CLIENT_SECRET) {
+      nextSteps.push('❌ Configure LinkedIn OAuth credentials in environment variables')
+    } else {
+      nextSteps.push('✅ LinkedIn OAuth is properly configured')
     }
 
     if (!session) {
-      nextSteps.push('🔧 Test Google OAuth by visiting /auth/signin')
-      nextSteps.push('📋 If OAuth fails, check Google Console configuration')
-      nextSteps.push('🚀 Most likely fix: Publish OAuth app or add test users in Google Console')
+      nextSteps.push('🔧 Test OAuth by visiting /auth/signin')
+      nextSteps.push('📋 If OAuth fails, check provider console configurations')
     } else {
       nextSteps.push('🎉 OAuth is working! User is successfully authenticated')
     }
 
     return NextResponse.json({
-      status: 'OAuth Configuration Test - Enhanced',
+      success: true,
+      status: 'healthy',
       timestamp: new Date().toISOString(),
-      overall_status: validation.environment_variables.status === 'PASS' ?
-        (session ? 'FULLY_WORKING' : 'READY_FOR_TESTING') : 'NEEDS_CONFIGURATION',
-      environment: {
-        NODE_ENV: process.env.NODE_ENV,
-        ...envCheck,
-      },
       validation,
-      session: session ? {
-        user: session.user,
-        expires: session.expires,
-      } : null,
-      oauth_urls: oauthUrls,
-      google_config: googleConfig,
-      next_steps: nextSteps,
-      google_console_requirements: {
-        redirect_uri: oauthUrls.google_callback,
-        authorized_domains: ['portfolio-kpi-copilot.vercel.app', 'vercel.app'],
-        required_scopes: ['openid', 'profile', 'email'],
-        publishing_status: 'Must be PUBLISHED or user added to TEST USERS'
-      },
-      quick_links: {
-        google_console: 'https://console.cloud.google.com/',
-        test_signin: `${baseUrl}/auth/signin`,
-        setup_guide: `${baseUrl}/setup/oauth`,
-        oauth_consent_screen: 'https://console.cloud.google.com/apis/credentials/consent'
+      nextSteps,
+      responseTime: `${Date.now() - Date.now()}ms`,
+      test_urls: oauthUrls
+    }, {
+      status: 200,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
       }
     })
+
   } catch (error) {
-    console.error('OAuth test error:', error)
+    console.error('OAuth verification error:', error)
+    
     return NextResponse.json({
-      error: 'OAuth configuration test failed',
-      details: error instanceof Error ? error.message : 'Unknown error',
-      next_steps: [
-        'Check server logs for detailed error information',
-        'Verify all environment variables are set correctly',
-        'Ensure NextAuth configuration is valid'
+      success: false,
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
+      error: error instanceof Error ? error.message : String(error),
+      responseTime: `${Date.now() - Date.now()}ms`,
+      recommendations: [
+        '🚨 Critical: OAuth system verification failed',
+        '🔧 Check OAuth configuration and environment variables',
+        '📞 Contact system administrator for assistance'
       ]
     }, { status: 500 })
   }

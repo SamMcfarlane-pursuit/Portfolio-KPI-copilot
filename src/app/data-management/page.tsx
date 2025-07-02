@@ -220,7 +220,7 @@ export default function DataManagementPage() {
             <div>
               <h4 className="font-semibold mb-2">Creating Entities</h4>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• Click "Create New" to add portfolios, companies, or KPIs</li>
+                <li>• Click &quot;Create New&quot; to add portfolios, companies, or KPIs</li>
                 <li>• All required fields are marked with an asterisk (*)</li>
                 <li>• Data is validated before saving</li>
                 <li>• Creation is logged for audit purposes</li>

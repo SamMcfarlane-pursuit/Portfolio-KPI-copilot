@@ -436,8 +436,24 @@ function applyScenarioMultiplier(predictions: PredictionsResponse['predictions']
   const adjusted: PredictionsResponse['predictions'] = {}
 
   Object.entries(predictions).forEach(([key, predictionArray]) => {
-    if (predictionArray) {
-      adjusted[key as keyof PredictionsResponse['predictions']] = predictionArray.map(p => ({
+    if (key === 'custom' && predictionArray && typeof predictionArray === 'object' && !Array.isArray(predictionArray)) {
+      // Handle custom predictions object
+      const customAdjusted: { [key: string]: Prediction[] } = {}
+      Object.entries(predictionArray).forEach(([customKey, customArray]) => {
+        if (Array.isArray(customArray)) {
+          customAdjusted[customKey] = customArray.map(p => ({
+            ...p,
+            predicted: p.predicted * multiplier,
+            confidenceInterval: p.confidenceInterval ? {
+              lower: p.confidenceInterval.lower * multiplier,
+              upper: p.confidenceInterval.upper * multiplier
+            } : undefined
+          }))
+        }
+      })
+      ;(adjusted as any).custom = customAdjusted
+    } else if (predictionArray && Array.isArray(predictionArray)) {
+      const adjustedArray = predictionArray.map(p => ({
         ...p,
         predicted: p.predicted * multiplier,
         confidenceInterval: p.confidenceInterval ? {
@@ -445,6 +461,14 @@ function applyScenarioMultiplier(predictions: PredictionsResponse['predictions']
           upper: p.confidenceInterval.upper * multiplier
         } : undefined
       }))
+
+      if (key === 'revenue') {
+        adjusted.revenue = adjustedArray
+      } else if (key === 'growth') {
+        adjusted.growth = adjustedArray
+      } else if (key === 'profitability') {
+        adjusted.profitability = adjustedArray
+      }
     }
   })
 
@@ -453,10 +477,17 @@ function applyScenarioMultiplier(predictions: PredictionsResponse['predictions']
 
 function flattenPredictions(predictions: PredictionsResponse['predictions']): Prediction[] {
   const flattened: Prediction[] = []
-  
+
   Object.values(predictions).forEach(predictionArray => {
-    if (predictionArray) {
+    if (predictionArray && Array.isArray(predictionArray)) {
       flattened.push(...predictionArray)
+    } else if (predictionArray && typeof predictionArray === 'object') {
+      // Handle custom predictions object
+      Object.values(predictionArray).forEach(customArray => {
+        if (Array.isArray(customArray)) {
+          flattened.push(...customArray)
+        }
+      })
     }
   })
 

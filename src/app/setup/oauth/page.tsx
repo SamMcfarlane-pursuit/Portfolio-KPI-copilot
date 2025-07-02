@@ -123,21 +123,21 @@ export default function OAuthSetupPage() {
               <Alert>
                 <CheckCircle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Most Common Fix:</strong> In OAuth consent screen, click <strong>"PUBLISH APP"</strong> 
-                  or add your email to <strong>"Test users"</strong> if keeping it in testing mode.
+                  <strong>Most Common Fix:</strong> In OAuth consent screen, click <strong>&quot;PUBLISH APP&quot;</strong>
+                  or add your email to <strong>&quot;Test users&quot;</strong> if keeping it in testing mode.
                 </AlertDescription>
               </Alert>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="p-4 border rounded-lg">
                   <h4 className="font-semibold text-green-600 mb-2">Option A: Publish App</h4>
                   <p className="text-sm text-gray-600">
-                    Click "PUBLISH APP" to allow any Google user to sign in
+                    Click &quot;PUBLISH APP&quot; to allow any Google user to sign in
                   </p>
                 </div>
                 <div className="p-4 border rounded-lg">
                   <h4 className="font-semibold text-blue-600 mb-2">Option B: Add Test Users</h4>
                   <p className="text-sm text-gray-600">
-                    Add specific email addresses to "Test users" section
+                    Add specific email addresses to &quot;Test users&quot; section
                   </p>
                 </div>
               </div>

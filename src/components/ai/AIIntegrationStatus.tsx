@@ -43,11 +43,13 @@ export function AIIntegrationStatus({ showActions = true, compact = false }: AII
 
   useEffect(() => {
     checkAIStatus()
-    
+
     if (autoRefresh) {
       const interval = setInterval(checkAIStatus, 30000) // Check every 30 seconds
       return () => clearInterval(interval)
     }
+
+    return undefined // Explicit return for when autoRefresh is false
   }, [autoRefresh])
 
   const checkAIStatus = async () => {

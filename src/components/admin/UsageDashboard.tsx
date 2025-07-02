@@ -101,7 +101,7 @@ export function UsageDashboard() {
         <Alert>
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            ⚠️ You're approaching your daily limits. Consider optimizing usage or upgrading to Vercel Pro.
+            ⚠️ You&apos;re approaching your daily limits. Consider optimizing usage or upgrading to Vercel Pro.
           </AlertDescription>
         </Alert>
       )}
@@ -164,7 +164,7 @@ export function UsageDashboard() {
         <CardHeader>
           <CardTitle className="text-lg">💡 Optimization Tips</CardTitle>
           <CardDescription>
-            Stay within Vercel's free tier limits
+            Stay within Vercel&apos;s free tier limits
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

@@ -607,7 +607,7 @@ export default function CRUDManager({ entityType, title }: CRUDManagerProps) {
                               Confirm Deletion
                             </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete "{entity.name}"? 
+                              Are you sure you want to delete &quot;{entity.name}&quot;?
                               This will deactivate the {entityType.slice(0, -1)} but keep it for audit purposes.
                               Data will be backed up before deletion.
                             </AlertDialogDescription>

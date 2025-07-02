@@ -126,6 +126,7 @@ export function Sidebar({ className }: SidebarProps) {
   const isAdmin = session?.user?.role === 'ADMIN' || session?.user?.role === 'SUPER_ADMIN'
 
   const isActivePath = (href: string) => {
+    if (!pathname) return false
     if (href === '/dashboard' && pathname === '/') return true
     return pathname.startsWith(href)
   }

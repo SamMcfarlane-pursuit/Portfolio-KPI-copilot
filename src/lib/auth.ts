@@ -44,7 +44,7 @@ const createProviders = () => {
 
   // Google OAuth Provider - DISABLED IN PRODUCTION UNTIL PROPERLY CONFIGURED
   // Only enable if explicitly configured and not in production without proper setup
-  if (hasEnvVar('GOOGLE_CLIENT_ID') && hasEnvVar('GOOGLE_CLIENT_SECRET') && process.env.ENABLE_GOOGLE_OAUTH === 'true') {
+  if (hasEnvVar('GOOGLE_CLIENT_ID') && hasEnvVar('GOOGLE_CLIENT_SECRET')) {
     providers.push(
       GoogleProvider({
         clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -61,21 +61,20 @@ const createProviders = () => {
     )
   }
 
-  // GitHub OAuth Provider - DISABLED FOR NOW
-  // Temporarily disabled to fix authentication errors
-  // if (hasEnvVar('GITHUB_ID') && hasEnvVar('GITHUB_SECRET')) {
-  //   providers.push(
-  //     GitHubProvider({
-  //       clientId: process.env.GITHUB_ID!,
-  //       clientSecret: process.env.GITHUB_SECRET!,
-  //       authorization: {
-  //         params: {
-  //           scope: 'read:user user:email',
-  //         },
-  //       },
-  //     })
-  //   )
-  // }
+  // GitHub OAuth Provider
+  if (hasEnvVar('GITHUB_ID') && hasEnvVar('GITHUB_SECRET')) {
+    providers.push(
+      GitHubProvider({
+        clientId: process.env.GITHUB_ID!,
+        clientSecret: process.env.GITHUB_SECRET!,
+        authorization: {
+          params: {
+            scope: 'read:user user:email',
+          },
+        },
+      })
+    )
+  }
 
   // Microsoft/Azure AD Provider - DISABLED UNTIL PROPERLY CONFIGURED
   if (hasEnvVar('AZURE_AD_CLIENT_ID') && hasEnvVar('AZURE_AD_CLIENT_SECRET') && process.env.ENABLE_AZURE_OAUTH === 'true') {

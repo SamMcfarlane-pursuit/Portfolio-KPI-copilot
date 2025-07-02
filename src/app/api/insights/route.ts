@@ -294,11 +294,11 @@ function generateRiskInsights(portfolios: any[], kpis: any[]): Insight[] {
     return acc
   }, {} as { [key: string]: number })
 
-  const totalInvestment = Object.values(sectorConcentration).reduce((sum: number, value: number) => sum + value, 0)
-  const maxConcentration = Math.max(...Object.values(sectorConcentration)) / totalInvestment
+  const totalInvestment = Object.values(sectorConcentration).reduce((sum: number, value: unknown) => sum + (value as number), 0)
+  const maxConcentration = Math.max(...Object.values(sectorConcentration) as number[]) / totalInvestment
 
   if (maxConcentration > 0.5) {
-    const dominantSector = Object.entries(sectorConcentration).find(([_, value]) => value / totalInvestment === maxConcentration)?.[0]
+    const dominantSector = Object.entries(sectorConcentration).find(([_, value]) => (value as number) / totalInvestment === maxConcentration)?.[0]
     insights.push({
       id: `risk_concentration_${Date.now()}`,
       type: 'risk',
@@ -390,7 +390,7 @@ function generateTrendInsights(portfolios: any[], kpis: any[]): Insight[] {
   const insights: Insight[] = []
 
   // Trend analysis by category
-  const categories = [...new Set(kpis.map(k => k.category))]
+  const categories = Array.from(new Set(kpis.map(k => k.category)))
   
   categories.forEach(category => {
     const categoryKPIs = kpis.filter(k => k.category === category)

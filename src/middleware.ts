@@ -165,6 +165,7 @@ export default withAuth(
             req.nextUrl.pathname.startsWith('/api/docs') ||
             req.nextUrl.pathname.startsWith('/api/system/') ||
             req.nextUrl.pathname.startsWith('/api/test/') ||
+            req.nextUrl.pathname.startsWith('/api/ai/test') ||
             req.nextUrl.pathname.startsWith('/api/debug/') ||
             req.nextUrl.pathname.startsWith('/api/env-check') ||
             req.nextUrl.pathname.startsWith('/api/env-diagnostic') ||

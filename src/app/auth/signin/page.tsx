@@ -45,8 +45,8 @@ export default function SignInPage() {
     password: ''
   })
 
-  const callbackUrl = searchParams.get('callbackUrl') || '/summary'
-  const errorParam = searchParams.get('error')
+  const callbackUrl = searchParams?.get('callbackUrl') || '/summary'
+  const errorParam = searchParams?.get('error')
 
   useEffect(() => {
     // Load available providers
@@ -364,10 +364,10 @@ export default function SignInPage() {
                     </Button>
                     {provider.id === 'google' && (
                       <div className="text-xs text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                        <div className="font-semibold mb-1">📋 If you see "This app isn't verified":</div>
+                        <div className="font-semibold mb-1">📋 If you see &quot;This app isn&apos;t verified&quot;:</div>
                         <div className="space-y-1">
-                          <div>1. Click <strong>"Advanced"</strong> (small text at bottom)</div>
-                          <div>2. Click <strong>"Go to Portfolio KPI Copilot (unsafe)"</strong></div>
+                          <div>1. Click <strong>&quot;Advanced&quot;</strong> (small text at bottom)</div>
+                          <div>2. Click <strong>&quot;Go to Portfolio KPI Copilot (unsafe)&quot;</strong></div>
                           <div>3. Continue with normal sign-in process</div>
                         </div>
                       </div>
@@ -456,7 +456,7 @@ export default function SignInPage() {
             {/* Footer Links */}
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
-                Don't have an account?{' '}
+                Don&apos;t have an account?{' '}
                 <Link href="/auth/signup" className="text-primary hover:underline">
                   Sign up
                 </Link>

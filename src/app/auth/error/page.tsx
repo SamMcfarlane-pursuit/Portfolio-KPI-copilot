@@ -76,7 +76,7 @@ const errorMessages: Record<string, { title: string; description: string; action
 
 export default function AuthErrorPage() {
   const searchParams = useSearchParams()
-  const error = searchParams.get('error') || 'Default'
+  const error = searchParams?.get('error') || 'Default'
   
   const errorInfo = errorMessages[error] || errorMessages.Default
 
@@ -166,7 +166,7 @@ export default function AuthErrorPage() {
               <div className="space-y-2 text-xs text-muted-foreground text-left bg-blue-50 p-4 rounded-lg">
                 <p><strong>Most Common Fix:</strong></p>
                 <p>• Go to Google Console → OAuth consent screen</p>
-                <p>• Either click "PUBLISH APP" or add your email to "Test users"</p>
+                <p>• Either click &quot;PUBLISH APP&quot; or add your email to &quot;Test users&quot;</p>
                 <p></p>
                 <p><strong>Other Solutions:</strong></p>
                 <p>• Verify redirect URI: https://portfolio-kpi-copilot.vercel.app/api/auth/callback/google</p>

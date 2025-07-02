@@ -32,7 +32,7 @@ export function Breadcrumbs() {
   const pathname = usePathname()
   
   // Don't show breadcrumbs on home page or auth pages
-  if (pathname === '/' || pathname.startsWith('/auth/')) {
+  if (!pathname || pathname === '/' || pathname.startsWith('/auth/')) {
     return null
   }
 

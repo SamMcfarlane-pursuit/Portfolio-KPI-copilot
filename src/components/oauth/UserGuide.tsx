@@ -93,10 +93,10 @@ export function UserGuide({ className }: UserGuideProps) {
               <div className="bg-amber-50 p-3 rounded border border-amber-200">
                 <p className="text-sm font-medium text-amber-800 mb-2">User Instructions:</p>
                 <ol className="text-xs text-amber-700 space-y-1 list-decimal list-inside">
-                  <li>Click "Continue with Google"</li>
-                  <li>When seeing "This app isn't verified"</li>
-                  <li>Click <strong>"Advanced"</strong> (small text)</li>
-                  <li>Click <strong>"Go to Portfolio KPI Copilot (unsafe)"</strong></li>
+                  <li>Click &quot;Continue with Google&quot;</li>
+                  <li>When seeing &quot;This app isn&apos;t verified&quot;</li>
+                  <li>Click <strong>&quot;Advanced&quot;</strong> (small text)</li>
+                  <li>Click <strong>&quot;Go to Portfolio KPI Copilot (unsafe)&quot;</strong></li>
                   <li>Continue with normal sign-in</li>
                 </ol>
               </div>
@@ -120,7 +120,7 @@ export function UserGuide({ className }: UserGuideProps) {
                 </div>
               </div>
               <div className="text-sm text-gray-600">
-                <strong>Requirements:</strong> Google Workspace account, change User Type to "Internal" in OAuth consent screen
+                <strong>Requirements:</strong> Google Workspace account, change User Type to &quot;Internal&quot; in OAuth consent screen
               </div>
             </div>
           </div>

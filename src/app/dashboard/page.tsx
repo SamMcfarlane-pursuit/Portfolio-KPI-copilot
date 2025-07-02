@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { AIInsightsPanel } from '@/components/dashboard/AIInsightsPanel';
 import { EnterpriseKPICard } from '@/components/dashboard/EnterpriseKPICard';
 import { PortfolioChart } from '@/components/dashboard/PortfolioChart';
+import { AICopilotWidget } from '@/components/ai/AICopilotWidget';
 import {
   TrendingUp,
   DollarSign,
@@ -267,6 +268,14 @@ export default function DashboardPage() {
             showGrowth={true}
           />
         </div>
+      </div>
+
+      {/* AI Copilot Section */}
+      <div className="mt-8">
+        <AICopilotWidget 
+          portfolioName="TechCorp Portfolio"
+          className="w-full"
+        />
       </div>
 
       {/* Secondary Analytics Grid */}

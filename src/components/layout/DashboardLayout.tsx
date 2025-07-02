@@ -30,7 +30,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   }
 
   // Show landing page for auth pages
-  if (pathname.startsWith('/auth/')) {
+  if (pathname && pathname.startsWith('/auth/')) {
     return <>{children}</>
   }
 

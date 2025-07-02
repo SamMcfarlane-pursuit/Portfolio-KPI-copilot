@@ -97,21 +97,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: false,
         error: 'AI service error',
-        details: aiResponse.error
+        details: 'error' in aiResponse ? aiResponse.error : 'Unknown error'
       }, { status: 500 })
     }
 
     // Log the conversation for analytics
-    await logConversation(session.user.id, messages, aiResponse.message, context)
+    const responseMessage = 'message' in aiResponse ? aiResponse.message : ''
+    await logConversation(session.user.id, messages, responseMessage, context)
 
     return NextResponse.json({
       success: true,
       message: {
         role: 'assistant',
-        content: aiResponse.message,
+        content: responseMessage,
         timestamp: new Date().toISOString()
       },
-      usage: aiResponse.usage,
+      usage: 'usage' in aiResponse ? aiResponse.usage : undefined,
       context: contextData ? {
         type: context,
         portfolioId,
