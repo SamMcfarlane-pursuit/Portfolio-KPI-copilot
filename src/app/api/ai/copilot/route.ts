@@ -50,10 +50,29 @@ const handleCopilotRequest = async (request: NextRequest, context: { user: any }
     const portfolioContext = portfolioId ? await getPortfolioContext(portfolioId, user) : null
     
     // Build enhanced AI request with portfolio intelligence
+    let messages = undefined;
+    if (requestType === 'chat') {
+      // Format portfolio context for system prompt
+      let systemPrompt = 'You are an expert AI copilot for portfolio KPI analysis.';
+      if (portfolioContext) {
+        systemPrompt += `\nPortfolio Context:\n` +
+          `Name: ${portfolioContext.name}\n` +
+          `Sector: ${portfolioContext.sector}\n` +
+          `Key Metrics: Revenue=${portfolioContext.keyMetrics.revenue ?? 'N/A'}, Growth=${portfolioContext.keyMetrics.growth ?? 'N/A'}, Margin=${portfolioContext.keyMetrics.margin ?? 'N/A'}\n` +
+          `Risk Level: ${portfolioContext.riskLevel}\n` +
+          `Performance Score: ${portfolioContext.performanceScore}`;
+      } else {
+        systemPrompt += '\nNo specific portfolio context available.';
+      }
+      messages = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: query }
+      ];
+    }
     const aiRequest: AIRequest = {
       type: requestType as 'chat' | 'analysis' | 'prediction' | 'explanation' | 'summary',
       input: {
-        query,
+        ...(requestType === 'chat' ? { messages } : { query }),
         portfolioId,
         conversationId: conversationId || `copilot_${Date.now()}`,
         context: {
