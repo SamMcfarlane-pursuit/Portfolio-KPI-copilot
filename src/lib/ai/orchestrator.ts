@@ -189,30 +189,33 @@ export class AIOrchestrator {
   }
 
   private rankProviders(requestType: string, priority: string): string[] {
+    // Check if Ollama should be prioritized
+    const useOllamaPrimary = process.env.USE_OLLAMA_PRIMARY === 'true'
+    
     // Provider ranking based on capabilities and priorities
     const rankings = {
       analysis: {
-        quality: ['openrouter', 'openai', 'ollama'],
+        quality: useOllamaPrimary ? ['ollama', 'openrouter', 'openai'] : ['openrouter', 'openai', 'ollama'],
         speed: ['ollama', 'openrouter', 'openai'],
         cost: ['ollama', 'openrouter', 'openai']
       },
       prediction: {
-        quality: ['openrouter', 'openai', 'ollama'],
-        speed: ['openrouter', 'ollama', 'openai'],
+        quality: useOllamaPrimary ? ['ollama', 'openrouter', 'openai'] : ['openrouter', 'openai', 'ollama'],
+        speed: useOllamaPrimary ? ['ollama', 'openrouter', 'openai'] : ['openrouter', 'ollama', 'openai'],
         cost: ['ollama', 'openrouter', 'openai']
       },
       chat: {
-        quality: ['openrouter', 'openai', 'ollama'],
+        quality: useOllamaPrimary ? ['ollama', 'openrouter', 'openai'] : ['openrouter', 'openai', 'ollama'],
         speed: ['ollama', 'openrouter', 'openai'],
         cost: ['ollama', 'openrouter', 'openai']
       },
       explanation: {
-        quality: ['openrouter', 'openai', 'ollama'],
+        quality: useOllamaPrimary ? ['ollama', 'openrouter', 'openai'] : ['openrouter', 'openai', 'ollama'],
         speed: ['ollama', 'openrouter', 'openai'],
         cost: ['ollama', 'openrouter', 'openai']
       },
       summary: {
-        quality: ['openrouter', 'openai', 'ollama'],
+        quality: useOllamaPrimary ? ['ollama', 'openrouter', 'openai'] : ['openrouter', 'openai', 'ollama'],
         speed: ['ollama', 'openrouter', 'openai'],
         cost: ['ollama', 'openrouter', 'openai']
       }
@@ -232,11 +235,11 @@ export class AIOrchestrator {
         summary: 'openai/gpt-4o'
       },
       ollama: {
-        analysis: 'llama3.2:latest',
-        prediction: 'llama3.2:latest',
-        chat: 'llama3.2:latest',
-        explanation: 'llama3.2:latest',
-        summary: 'llama3.2:latest'
+        analysis: process.env.OLLAMA_MODEL || 'llama3.1:latest',
+        prediction: process.env.OLLAMA_MODEL || 'llama3.1:latest',
+        chat: process.env.OLLAMA_MODEL || 'llama3.1:latest',
+        explanation: process.env.OLLAMA_MODEL || 'llama3.1:latest',
+        summary: process.env.OLLAMA_MODEL || 'llama3.1:latest'
       },
       openai: {
         analysis: 'gpt-4o',
@@ -282,10 +285,12 @@ export class AIOrchestrator {
     }
 
     if (provider.name === 'ollama') {
-      return await instance.chat(input.messages, {
+      const response = await instance.chat(input.messages, {
         temperature: preferences.temperature || 0.7,
         maxTokens: preferences.maxTokens || 1000
       })
+      // Ensure we return an object with a response property
+      return { response }
     }
 
     if (provider.name === 'openai') {

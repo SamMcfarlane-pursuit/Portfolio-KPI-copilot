@@ -186,5 +186,5 @@ async function setupAIDemo() {
   }
 }
 
-// Run setup with top-level await for ESM compatibility
-await setupAIDemo() 
+// Run setup
+setupAIDemo().catch(console.error) 

@@ -1,309 +1,292 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { supabaseServer } from '@/lib/supabase/server'
+/**
+ * Portfolio API v2
+ * Enhanced portfolio management with standardized responses and advanced features
+ */
 
-// GET - Fetch all portfolios with authentication
-export async function GET(request: NextRequest) {
-  try {
-    // Check authentication for professional use
-    const session = await getServerSession(authOptions)
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Authentication required' }, { status: 401 })
-    }
+import { NextRequest } from 'next/server'
+import { apiGateway } from '@/lib/api/gateway'
+import { validationSchemas } from '@/lib/api/validation'
+import { PERMISSIONS } from '@/lib/middleware/rbac-middleware'
+import { hybridData } from '@/lib/data/hybrid-data-layer'
+import RBACService from '@/lib/rbac'
 
+// GET /api/v2/portfolios - List portfolios with advanced filtering
+export const GET = apiGateway.createHandler(
+  async (request, context) => {
     const { searchParams } = new URL(request.url)
-    const organizationId = searchParams.get('organizationId')
-    const sector = searchParams.get('sector')
-    const status = searchParams.get('status')
-
-    // Basic organization access check
-    if (organizationId) {
-      // In a production app, implement proper RBAC here
-      console.log(`User ${session.user.id} accessing organization ${organizationId}`)
-    }
-
-    const where: any = {}
+    const query = validationSchemas.portfolio.query.parse(
+      Object.fromEntries(searchParams.entries())
+    )
     
-    if (organizationId) {
-      where.fund = {
-        organizationId: organizationId
-      }
-    }
-    
-    if (sector) {
-      where.sector = sector
+    // Build filters
+    const filters: any = {}
+    if (query.organizationId) filters.organizationId = query.organizationId
+    if (query.fundId) filters.fundId = query.fundId
+    if (query.sector) filters.sector = query.sector
+    if (query.status) filters.status = query.status
+    if (query.search) {
+      filters.OR = [
+        { name: { contains: query.search, mode: 'insensitive' } },
+        { description: { contains: query.search, mode: 'insensitive' } }
+      ]
     }
     
-    if (status) {
-      where.status = status
+    // Apply date filters
+    if (query.dateFrom || query.dateTo) {
+      filters.createdAt = {}
+      if (query.dateFrom) filters.createdAt.gte = new Date(query.dateFrom)
+      if (query.dateTo) filters.createdAt.lte = new Date(query.dateTo)
     }
-
-    const portfolios = await prisma.portfolio.findMany({
-      where,
-      include: {
-        fund: {
-          include: {
-            organization: true
+    
+    // Get portfolios with pagination
+    const [portfolios, total] = await Promise.all([
+      hybridData.portfolio.findMany({
+        where: filters,
+        include: {
+          organization: true,
+          fund: query.includeKPIs ? {
+            include: { kpis: true }
+          } : true,
+          kpis: query.includeKPIs ? {
+            take: 10,
+            orderBy: { period: 'desc' }
+          } : false,
+          _count: {
+            select: { kpis: true }
           }
         },
-        kpis: {
-          orderBy: { period: 'desc' },
-          take: 10
+        orderBy: query.sortBy ? {
+          [query.sortBy]: query.sortOrder
+        } : { updatedAt: 'desc' },
+        skip: (query.page - 1) * query.limit,
+        take: query.limit
+      }),
+      hybridData.portfolio.count({ where: filters })
+    ])
+    
+    // Enhance portfolios with analytics if requested
+    const enhancedPortfolios = await Promise.all(
+      portfolios.map(async (portfolio) => {
+        const enhanced = {
+          ...portfolio,
+          analytics: query.includeAnalytics ? await getPortfolioAnalytics(portfolio.id) : undefined,
+          permissions: {
+            canEdit: RBACService.hasPermission(context.user, PERMISSIONS.MANAGE_PORTFOLIO),
+            canDelete: RBACService.hasPermission(context.user, PERMISSIONS.DELETE_PORTFOLIO),
+            canViewKPIs: RBACService.hasPermission(context.user, PERMISSIONS.VIEW_KPI),
+            canManageKPIs: RBACService.hasPermission(context.user, PERMISSIONS.MANAGE_KPI)
+          }
         }
-      },
-      orderBy: { createdAt: 'desc' }
-    })
-
-    // Calculate performance metrics for each portfolio
-    const portfoliosWithMetrics = portfolios.map(portfolio => {
-      const revenueKPIs = portfolio.kpis.filter(kpi => kpi.category === 'revenue')
-      const profitabilityKPIs = portfolio.kpis.filter(kpi => kpi.category === 'profitability')
-      
-      let growthRate = 0
-      let healthScore = 50
-      
-      // Calculate growth rate
-      if (revenueKPIs.length >= 2) {
-        const latest = revenueKPIs[0].value
-        const previous = revenueKPIs[1].value
-        growthRate = ((latest - previous) / previous) * 100
         
-        // Adjust health score based on growth
-        if (growthRate > 20) healthScore += 30
-        else if (growthRate > 10) healthScore += 20
-        else if (growthRate > 0) healthScore += 10
-        else if (growthRate < -10) healthScore -= 20
-      }
-      
-      // Factor in profitability
-      if (profitabilityKPIs.length > 0) {
-        const avgMargin = profitabilityKPIs.reduce((sum, kpi) => sum + kpi.value, 0) / profitabilityKPIs.length
-        if (avgMargin > 20) healthScore += 20
-        else if (avgMargin > 10) healthScore += 10
-        else if (avgMargin < 0) healthScore -= 15
-      }
-      
-      healthScore = Math.max(0, Math.min(100, healthScore))
-      
-      return {
-        ...portfolio,
-        metrics: {
-          latestRevenue: revenueKPIs[0]?.value || 0,
-          growthRate: growthRate,
-          healthScore: Math.round(healthScore),
-          kpiCount: portfolio.kpis.length,
-          lastUpdated: portfolio.kpis[0]?.period || portfolio.updatedAt
-        }
-      }
-    })
-
-    return NextResponse.json({
-      success: true,
-      data: portfoliosWithMetrics,
-      count: portfoliosWithMetrics.length
-    })
-
-  } catch (error) {
-    console.error('Error fetching portfolios:', error)
-    return NextResponse.json(
-      { error: 'Failed to fetch portfolios' },
-      { status: 500 }
+        return enhanced
+      })
     )
-  }
-}
-
-// POST - Create new portfolio company
-export async function POST(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { name, sector, geography, investment, ownership, description, status = 'ACTIVE' } = body
-
-    // Validation
-    if (!name || !sector || !investment) {
-      return NextResponse.json(
-        { error: 'Name, sector, and investment are required' },
-        { status: 400 }
-      )
-    }
-
-    // Get default organization and fund
-    let organization = await prisma.organization.findFirst({
-      orderBy: { createdAt: 'desc' }
-    })
-
-    if (!organization) {
-      // Create default organization if none exists
-      organization = await prisma.organization.create({
-        data: {
-          name: 'Default Portfolio Organization',
-          slug: 'default-org',
-          description: 'Default organization for portfolio management'
-        }
-      })
-    }
-
-    let fund = await prisma.fund.findFirst({
-      where: { organizationId: organization.id },
-      orderBy: { createdAt: 'desc' }
-    })
-
-    if (!fund) {
-      // Create default fund if none exists
-      fund = await prisma.fund.create({
-        data: {
-          name: 'Growth Fund I',
-          fundNumber: 'GF-I',
-          vintage: new Date().getFullYear(),
-          strategy: 'Growth Equity',
-          totalSize: 1000000000, // $1B default
-          currency: 'USD',
-          organizationId: organization.id
-        }
-      })
-    }
-
-    // Create portfolio company
-    const portfolio = await prisma.portfolio.create({
+    
+    // Calculate pagination metadata
+    const hasNext = query.page * query.limit < total
+    const hasPrev = query.page > 1
+    
+    return {
+      success: true,
       data: {
-        name,
-        sector,
-        geography: geography || 'North America',
-        status,
-        investment: parseFloat(investment),
-        ownership: parseFloat(ownership) || 0,
-        fundId: fund.id
+        portfolios: enhancedPortfolios,
+        pagination: {
+          page: query.page,
+          limit: query.limit,
+          total,
+          hasNext,
+          hasPrev,
+          totalPages: Math.ceil(total / query.limit)
+        },
+        filters: {
+          applied: Object.keys(filters).length > 0,
+          organizationId: query.organizationId,
+          sector: query.sector,
+          status: query.status,
+          search: query.search
+        },
+        summary: {
+          totalPortfolios: total,
+          activePortfolios: await hybridData.portfolio.count({
+            where: { ...filters, status: 'active' }
+          }),
+          sectors: await getPortfolioSectors(filters),
+          averageInvestment: await getAverageInvestment(filters)
+        }
+      }
+    }
+  },
+  {
+    requireAuth: true,
+    permissions: [PERMISSIONS.VIEW_PORTFOLIO],
+    validation: {
+      query: validationSchemas.portfolio.query
+    },
+    cache: { ttl: 300 }, // 5 minutes
+    rateLimit: { requests: 1000, window: 3600 }
+  }
+)
+
+// POST /api/v2/portfolios - Create new portfolio
+export const POST = apiGateway.createHandler(
+  async (request, context) => {
+    const body = await request.json()
+    const portfolioData = validationSchemas.portfolio.create.parse(body)
+    
+    // Check if user can create portfolios in this organization
+    if (!RBACService.canAccessOrganization(context.user, portfolioData.organizationId)) {
+      throw new Error('Cannot create portfolio in this organization')
+    }
+    
+    // Create portfolio
+    const portfolio = await hybridData.portfolio.create({
+      data: {
+        ...portfolioData,
+        createdBy: context.user.userId,
+        updatedBy: context.user.userId
       },
       include: {
-        fund: {
-          include: {
-            organization: true
-          }
+        organization: true,
+        fund: true,
+        _count: {
+          select: { kpis: true }
         }
       }
     })
-
-    // Create initial KPIs with placeholder data
-    const initialKPIs = [
-      {
-        name: 'Initial Investment',
-        category: 'financial',
-        value: parseFloat(investment),
-        unit: 'USD',
-        period: new Date(),
-        periodType: 'point_in_time',
-        source: 'Investment Record',
-        confidence: 1.0,
-        notes: 'Initial investment amount',
-        portfolioId: portfolio.id,
-        fundId: fund.id,
-        organizationId: organization.id
+    
+    // Log audit event
+    await RBACService.logAuditEvent({
+      userId: context.user.userId,
+      action: 'PORTFOLIO_CREATED',
+      resourceType: 'PORTFOLIO',
+      resourceId: portfolio.id,
+      metadata: {
+        portfolioName: portfolio.name,
+        sector: portfolio.sector,
+        investment: portfolio.investment
       }
-    ]
-
-    await prisma.kPI.createMany({
-      data: initialKPIs
     })
-
-    // Log successful creation
-    console.log(`Portfolio created: ${portfolio.id} for organization: ${organization.id}`)
-
-    // Real data integration would go here in production
-
-    return NextResponse.json({
+    
+    // Generate initial insights
+    const insights = await generateInitialInsights(portfolio)
+    
+    return {
       success: true,
-      data: portfolio,
-      message: 'Portfolio company created successfully'
-    })
-
-  } catch (error) {
-    console.error('Error creating portfolio:', error)
-
-    return NextResponse.json(
-      { error: 'Failed to create portfolio company' },
-      { status: 500 }
-    )
-  }
-}
-
-// PUT - Update portfolio company
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json()
-    const { id, ...updateData } = body
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Portfolio ID is required' },
-        { status: 400 }
-      )
-    }
-
-    const portfolio = await prisma.portfolio.update({
-      where: { id },
-      data: updateData,
-      include: {
-        fund: {
-          include: {
-            organization: true
+      data: {
+        portfolio: {
+          ...portfolio,
+          permissions: {
+            canEdit: true,
+            canDelete: RBACService.hasPermission(context.user, PERMISSIONS.DELETE_PORTFOLIO),
+            canViewKPIs: true,
+            canManageKPIs: true
           }
         },
-        kpis: {
-          orderBy: { period: 'desc' },
-          take: 5
-        }
+        insights,
+        nextSteps: [
+          'Add key performance indicators (KPIs)',
+          'Set up performance targets',
+          'Configure monitoring alerts',
+          'Invite team members'
+        ]
       }
-    })
+    }
+  },
+  {
+    requireAuth: true,
+    permissions: [PERMISSIONS.CREATE_PORTFOLIO],
+    validation: {
+      body: validationSchemas.portfolio.create
+    },
+    rateLimit: { requests: 100, window: 3600 }
+  }
+)
 
-    return NextResponse.json({
-      success: true,
-      data: portfolio,
-      message: 'Portfolio company updated successfully'
-    })
-
-  } catch (error) {
-    console.error('Error updating portfolio:', error)
-    return NextResponse.json(
-      { error: 'Failed to update portfolio company' },
-      { status: 500 }
-    )
+// Helper functions
+async function getPortfolioAnalytics(portfolioId: string) {
+  const [kpiCount, latestKPIs, performance] = await Promise.all([
+    hybridData.kpi.count({ where: { portfolioId } }),
+    hybridData.kpi.findMany({
+      where: { portfolioId },
+      orderBy: { period: 'desc' },
+      take: 5,
+      select: {
+        id: true,
+        name: true,
+        value: true,
+        unit: true,
+        category: true,
+        period: true
+      }
+    }),
+    calculatePortfolioPerformance(portfolioId)
+  ])
+  
+  return {
+    kpiCount,
+    latestKPIs,
+    performance,
+    lastUpdated: new Date().toISOString()
   }
 }
 
-// DELETE - Delete portfolio company
-export async function DELETE(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const id = searchParams.get('id')
-
-    if (!id) {
-      return NextResponse.json(
-        { error: 'Portfolio ID is required' },
-        { status: 400 }
-      )
-    }
-
-    // Delete related KPIs first
-    await prisma.kPI.deleteMany({
-      where: { portfolioId: id }
-    })
-
-    // Delete portfolio company
-    await prisma.portfolio.delete({
-      where: { id }
-    })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Portfolio company deleted successfully'
-    })
-
-  } catch (error) {
-    console.error('Error deleting portfolio:', error)
-    return NextResponse.json(
-      { error: 'Failed to delete portfolio company' },
-      { status: 500 }
-    )
+async function calculatePortfolioPerformance(portfolioId: string) {
+  // Mock performance calculation - would implement real logic
+  return {
+    score: 85,
+    trend: 'positive',
+    growthRate: 0.24,
+    riskLevel: 'medium',
+    benchmarkComparison: 1.15
   }
+}
+
+async function getPortfolioSectors(filters: any) {
+  const sectors = await hybridData.portfolio.groupBy({
+    by: ['sector'],
+    where: filters,
+    _count: {
+      sector: true
+    },
+    orderBy: {
+      _count: {
+        sector: 'desc'
+      }
+    }
+  })
+  
+  return sectors.map((s: any) => ({
+    sector: s.sector,
+    count: s._count.sector
+  }))
+}
+
+async function getAverageInvestment(filters: any) {
+  const result = await hybridData.portfolio.aggregate({
+    where: filters,
+    _avg: {
+      investment: true
+    }
+  })
+  
+  return result._avg.investment || 0
+}
+
+async function generateInitialInsights(portfolio: any) {
+  return [
+    {
+      type: 'recommendation',
+      title: 'Set Up KPI Tracking',
+      description: `Start tracking key metrics for ${portfolio.name} to monitor performance and identify optimization opportunities.`,
+      priority: 'high',
+      actionable: true
+    },
+    {
+      type: 'insight',
+      title: 'Sector Analysis',
+      description: `${portfolio.sector} sector companies typically focus on growth metrics like revenue growth rate and customer acquisition cost.`,
+      priority: 'medium',
+      actionable: false
+    }
+  ]
 }

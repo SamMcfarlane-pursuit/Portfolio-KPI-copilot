@@ -31,7 +31,7 @@ export class OllamaService {
   constructor() {
     this.config = {
       baseUrl: process.env.OLLAMA_BASE_URL || 'http://localhost:11434',
-      model: process.env.LLAMA_MODEL || 'llama3.2:latest',
+      model: process.env.OLLAMA_MODEL || 'llama3.1:latest',
       temperature: parseFloat(process.env.LLAMA_TEMPERATURE || '0.7'),
       maxTokens: parseInt(process.env.LLAMA_MAX_TOKENS || '2000'),
       timeout: parseInt(process.env.LLAMA_TIMEOUT || '30000')
